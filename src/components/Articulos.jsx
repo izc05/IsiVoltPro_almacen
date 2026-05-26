@@ -20,6 +20,7 @@ export default function Articulos() {
     articulos, 
     proveedores, 
     almacenes,
+    sectores,
     crearArticulo, 
     editarArticulo, 
     movimientos
@@ -86,8 +87,7 @@ export default function Articulos() {
     };
   }, [articulos]);
 
-  // Categorías únicas
-  const categorias = Array.from(new Set(articulos.map(a => a.categoria).filter(Boolean)));
+  const sectoresDisponibles = Array.from(new Set([...(sectores || []), ...articulos.map(a => a.categoria).filter(Boolean)]));
 
   // Filtrado de artículos
   const articulosFiltrados = articulos.filter(art => {
@@ -150,7 +150,7 @@ export default function Articulos() {
     setFormError('');
 
     if (!form.codigo.trim() || !form.nombre.trim() || !form.categoria.trim()) {
-      setFormError('Código, Nombre y Categoría son campos obligatorios.');
+      setFormError('Código, nombre y sector son campos obligatorios.');
       return;
     }
 
@@ -247,15 +247,15 @@ export default function Articulos() {
           />
         </div>
 
-        {/* Categoría */}
+        {/* Sector */}
         <div>
           <select
             value={categoriaFiltro}
             onChange={(e) => setCategoriaFiltro(e.target.value)}
             className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-hidden focus:border-amber-500"
           >
-            <option value="">Todas las Categorías</option>
-            {categorias.map(cat => (
+            <option value="">Todos los Sectores</option>
+            {sectoresDisponibles.map(cat => (
               <option key={cat} value={cat}>{cat}</option>
             ))}
           </select>
@@ -329,7 +329,7 @@ export default function Articulos() {
               <th scope="col" className="px-6 py-4">Foto</th>
               <th scope="col" className="px-6 py-4">Código</th>
               <th scope="col" className="px-6 py-4">Artículo</th>
-              <th scope="col" className="px-6 py-4">Categoría</th>
+              <th scope="col" className="px-6 py-4">Sector</th>
               <th scope="col" className="px-6 py-4">Stock</th>
               <th scope="col" className="px-6 py-4">Ubicación</th>
               <th scope="col" className="px-6 py-4">Estado</th>
@@ -522,20 +522,20 @@ export default function Articulos() {
                   />
                 </div>
 
-                {/* Categoría */}
+                {/* Sector */}
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Categoría *</label>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Sector *</label>
                   <input
                     type="text"
                     required
-                    list="categorias-form"
+                    list="sectores-form"
                     value={form.categoria}
                     onChange={(e) => setForm({ ...form, categoria: e.target.value })}
-                    placeholder="Ej. Cables, Canalización..."
+                    placeholder="Ej. Electricidad, Fontanería..."
                     className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-hidden focus:border-amber-500"
                   />
-                  <datalist id="categorias-form">
-                    {categorias.map(c => <option key={c} value={c} />)}
+                  <datalist id="sectores-form">
+                    {sectoresDisponibles.map(c => <option key={c} value={c} />)}
                   </datalist>
                 </div>
 
@@ -735,7 +735,7 @@ export default function Articulos() {
                 {/* Datos Generales */}
                 <div className="md:col-span-2 grid grid-cols-2 gap-y-3 gap-x-4 text-sm">
                   <div>
-                    <span className="text-gray-400 font-bold block">Categoría</span>
+                    <span className="text-gray-400 font-bold block">Sector</span>
                     <span className="text-gray-800 font-semibold">{articuloFicha.categoria}</span>
                   </div>
                   <div>

@@ -54,6 +54,22 @@ export const DEFAULT_ALMACENES = [
   { id: 'alm-clima', nombre: 'Taller climatización', activo: true }
 ];
 
+export const DEFAULT_SECTORES = [
+  'Electricidad',
+  'Fontanería',
+  'Calefacción',
+  'Albañilería',
+  'Mecánica',
+  'Jardinería',
+  'Climatización',
+  'Mantenimiento',
+  'Herramientas',
+  'Consumibles',
+  'Pintura',
+  'Carpintería',
+  'Cerrajería'
+];
+
 const KEYS = {
   ARTICULOS: 'isivolt_articulos',
   TECNICOS: 'isivolt_tecnicos',

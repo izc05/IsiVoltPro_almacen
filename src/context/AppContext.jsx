@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { PERMISSIONS, ROLES, storageService } from '../services/storageService';
+import { DEFAULT_SECTORES, PERMISSIONS, ROLES, storageService } from '../services/storageService';
 import { inventoryService } from '../services/inventoryService';
 
 const AppContext = createContext();
@@ -19,6 +19,7 @@ export function AppProvider({ children }) {
   const [usuarios, setUsuarios] = useState([]);
   const [almacenes, setAlmacenes] = useState([]);
   const [auditoria, setAuditoria] = useState([]);
+  const [sectores, setSectores] = useState(DEFAULT_SECTORES);
   const [ajustes, setAjustes] = useState({});
   const [currentUser, setCurrentUser] = useState(storageService.getCurrentUser());
   const [notification, setNotification] = useState(null);
@@ -34,6 +35,12 @@ export function AppProvider({ children }) {
     setAlmacenes(storageService.getAlmacenes());
     setAuditoria(storageService.getAuditoria());
     setAjustes(storageService.getAjustes());
+
+    const usados = [
+      ...inventoryService.getArticulos().map((art) => art.categoria),
+      ...inventoryService.getTecnicos().map((tec) => tec.seccion)
+    ].filter(Boolean);
+    setSectores(Array.from(new Set([...DEFAULT_SECTORES, ...usados])).sort((a, b) => a.localeCompare(b, 'es')));
   };
 
   useEffect(() => {
@@ -364,6 +371,7 @@ export function AppProvider({ children }) {
       usuarios,
       almacenes,
       auditoria,
+      sectores,
       ajustes,
       currentUser,
       roles: ROLES,

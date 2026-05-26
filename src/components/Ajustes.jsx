@@ -112,7 +112,7 @@ export default function Ajustes() {
           try {
             const codigo = String(row['Código Interno'] || '').trim().toUpperCase();
             const nombre = String(row['Nombre'] || '').trim();
-            const categoria = String(row['Categoría'] || '').trim();
+            const categoria = String(row['Sector'] || row['Categoría'] || '').trim();
 
             if (!codigo || !nombre || !categoria) {
               errores++;
@@ -172,7 +172,7 @@ export default function Ajustes() {
             nuevosTecnicos.push({
               id: `tec-import-${Date.now()}-${index}`,
               nombre,
-              seccion: row['Sección'] || 'General',
+              seccion: row['Sector'] || row['Sección'] || 'General',
               telefono: String(row['Teléfono'] || ''),
               email: row['Email'] || '',
               activo: true

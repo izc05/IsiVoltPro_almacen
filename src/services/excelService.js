@@ -14,7 +14,7 @@ export const excelService = {
         'Código Interno': a.codigo,
         'Código QR': a.qr || a.codigo,
         Nombre: a.nombre,
-        Categoría: a.categoria,
+        Sector: a.categoria,
         Marca: a.marca || '',
         Modelo: a.modelo || '',
         Descripción: a.descripcion || '',
@@ -30,7 +30,7 @@ export const excelService = {
       const wsTecnicos = XLSX.utils.json_to_sheet(tecnicos.map(t => ({
         ID: t.id,
         Nombre: t.nombre,
-        Sección: t.seccion || '',
+        Sector: t.seccion || '',
         Teléfono: t.telefono || '',
         Email: t.email || '',
         Activo: t.activo ? 'Sí' : 'No'
@@ -99,13 +99,13 @@ export const excelService = {
 
       if (tipo === 'articulos') {
         data = [[
-          'Código Interno', 'Nombre', 'Categoría', 'Marca', 'Modelo',
+          'Código Interno', 'Nombre', 'Sector', 'Marca', 'Modelo',
           'Descripción', 'Unidad', 'Stock Actual', 'Stock Mínimo',
           'Ubicación', 'Proveedor Principal'
         ]];
         filename = 'plantilla-articulos.xlsx';
       } else if (tipo === 'tecnicos') {
-        data = [['Nombre', 'Sección', 'Teléfono', 'Email']];
+        data = [['Nombre', 'Sector', 'Teléfono', 'Email']];
         filename = 'plantilla-tecnicos.xlsx';
       } else if (tipo === 'proveedores') {
         data = [['Nombre', 'CIF/NIF', 'Teléfono', 'Email', 'Dirección', 'Persona de Contacto', 'Observaciones']];

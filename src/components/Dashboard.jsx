@@ -14,6 +14,7 @@ export default function Dashboard() {
   const { 
     articulos, 
     almacenes,
+    sectores,
     movimientos, 
     setActiveTab, 
     generarPedidoAutomatico,
@@ -52,6 +53,19 @@ export default function Dashboard() {
       alertas
     };
   });
+
+  const resumenSectores = (sectores || [])
+    .map((sector) => {
+      const items = articulos.filter((art) => art.activo && art.categoria === sector);
+      return {
+        sector,
+        articulos: items.length,
+        unidades: items.reduce((sum, art) => sum + (Number(art.stockActual) || 0), 0),
+        alertas: items.filter((art) => art.stockActual <= art.stockMinimo).length
+      };
+    })
+    .filter((sector) => sector.articulos > 0)
+    .sort((a, b) => b.articulos - a.articulos);
 
   // 2. Análisis de movimientos (Materiales más retirados y Técnicos con más salidas)
   const rankingMateriales = {};
@@ -185,6 +199,43 @@ export default function Dashboard() {
               <div className="mt-4 flex items-end justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Unidades</span>
                 <span className="text-2xl font-black text-gray-900">{almacen.unidades}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-white p-6 rounded-2xl shadow-xs border border-gray-100">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+          <div>
+            <h3 className="text-lg font-bold text-gray-900">Sectores de Trabajo</h3>
+            <p className="text-xs text-gray-500 mt-0.5">Electricidad, fontanería, calefacción, albañilería, mecánica, jardinería y cualquier sector nuevo que añadas.</p>
+          </div>
+          <button
+            onClick={() => setActiveTab('articulos')}
+            className="self-start sm:self-auto text-xs font-bold text-amber-600 hover:text-amber-700"
+          >
+            Filtrar artículos
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          {resumenSectores.map((item) => (
+            <div key={item.sector} className="rounded-xl border border-gray-100 bg-gray-50 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="font-black text-gray-900">{item.sector}</p>
+                  <p className="mt-1 text-xs font-semibold text-gray-400">{item.articulos} referencias</p>
+                </div>
+                <span className={`rounded-full px-2 py-0.5 text-xs font-black ${
+                  item.alertas > 0 ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'
+                }`}>
+                  {item.alertas} alertas
+                </span>
+              </div>
+              <div className="mt-4 flex items-end justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Unidades</span>
+                <span className="text-2xl font-black text-gray-900">{item.unidades}</span>
               </div>
             </div>
           ))}

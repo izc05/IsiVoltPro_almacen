@@ -17,7 +17,7 @@ export const reportService = {
       columnas: [
         { header: 'Código', key: 'codigo' },
         { header: 'Nombre', key: 'nombre' },
-        { header: 'Categoría', key: 'categoria' },
+        { header: 'Sector', key: 'categoria' },
         { header: 'Ubicación', key: 'ubicacion' },
         { header: 'Stock', key: 'stockActual', align: 'right' },
         { header: 'Unidad', key: 'unidad' }
@@ -48,7 +48,7 @@ export const reportService = {
       columnas: [
         { header: 'Código', key: 'codigo' },
         { header: 'Artículo', key: 'nombre' },
-        { header: 'Categoría', key: 'categoria' },
+        { header: 'Sector', key: 'categoria' },
         { header: 'Stock Actual', key: 'stockActual', align: 'right' },
         { header: 'Stock Mínimo', key: 'stockMinimo', align: 'right' },
         { header: 'Faltante', key: 'deficiencia', align: 'right', highlight: true }

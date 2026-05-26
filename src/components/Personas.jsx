@@ -19,6 +19,7 @@ export default function Personas() {
   const { 
     tecnicos, 
     proveedores, 
+    sectores,
     crearTecnico, 
     editarTecnico, 
     crearProveedor, 
@@ -64,7 +65,7 @@ export default function Personas() {
     if (activeTabSub === 'tecnicos') {
       setTecForm({
         nombre: '',
-        seccion: 'Baja Tensión',
+        seccion: 'Electricidad',
         telefono: '',
         email: '',
         activo: true
@@ -357,14 +358,18 @@ export default function Personas() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Sección / Especialidad</label>
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Sector / Especialidad</label>
                     <input
                       type="text"
+                      list="sectores-tecnicos-form"
                       value={tecForm.seccion}
                       onChange={(e) => setTecForm({ ...tecForm, seccion: e.target.value })}
-                      placeholder="Ej. Telecomunicaciones, Industrial..."
+                      placeholder="Ej. Electricidad, Fontanería..."
                       className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-hidden focus:border-amber-500"
                     />
+                    <datalist id="sectores-tecnicos-form">
+                      {(sectores || []).map((sector) => <option key={sector} value={sector} />)}
+                    </datalist>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>

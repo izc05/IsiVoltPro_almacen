@@ -1,6 +1,11 @@
 export const reportService = {
+  getArticuloFoto(articulos, movimiento) {
+    return articulos.find((art) => art.id === movimiento.articuloId || art.codigo === movimiento.codigo)?.foto || '';
+  },
+
   generarReporteStockActual(articulos) {
     const data = articulos.filter(a => a.activo).map(a => ({
+      foto: a.foto || '',
       codigo: a.codigo,
       nombre: a.nombre,
       categoria: a.categoria,
@@ -15,6 +20,7 @@ export const reportService = {
     return {
       titulo: 'Informe de Stock Actual del Almacén',
       columnas: [
+        { header: 'Foto', key: 'foto', format: 'image' },
         { header: 'Código', key: 'codigo' },
         { header: 'Nombre', key: 'nombre' },
         { header: 'Sector', key: 'categoria' },
@@ -34,6 +40,7 @@ export const reportService = {
     const data = articulos
       .filter(a => a.activo && a.stockActual <= a.stockMinimo)
       .map(a => ({
+        foto: a.foto || '',
         codigo: a.codigo,
         nombre: a.nombre,
         categoria: a.categoria,
@@ -46,6 +53,7 @@ export const reportService = {
     return {
       titulo: 'Informe de Stock por debajo de Mínimos (Rotura)',
       columnas: [
+        { header: 'Foto', key: 'foto', format: 'image' },
         { header: 'Código', key: 'codigo' },
         { header: 'Artículo', key: 'nombre' },
         { header: 'Sector', key: 'categoria' },
@@ -60,7 +68,7 @@ export const reportService = {
     };
   },
 
-  generarReporteMovimientos(movimientos, tipo = 'todos', fechaInicio = null, fechaFin = null) {
+  generarReporteMovimientos(movimientos, articulos = [], tipo = 'todos', fechaInicio = null, fechaFin = null) {
     let filtrados = [...movimientos];
 
     if (tipo !== 'todos') {
@@ -81,6 +89,7 @@ export const reportService = {
     const data = filtrados.map(m => ({
       fecha: new Date(m.fecha).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' }),
       tipo: m.tipo.toUpperCase(),
+      foto: this.getArticuloFoto(articulos, m),
       codigo: m.codigo,
       nombre: m.articuloNombre,
       cantidad: m.cantidad,
@@ -100,6 +109,7 @@ export const reportService = {
       columnas: [
         { header: 'Fecha', key: 'fecha' },
         { header: 'Tipo', key: 'tipo' },
+        { header: 'Foto', key: 'foto', format: 'image' },
         { header: 'Código', key: 'codigo' },
         { header: 'Artículo', key: 'nombre' },
         { header: 'Cantidad', key: 'cantidad', align: 'right' },
@@ -119,11 +129,12 @@ export const reportService = {
     };
   },
 
-  generarReporteTecnico(movimientos, tecnicoNombre) {
+  generarReporteTecnico(movimientos, articulos = [], tecnicoNombre) {
     const salidas = movimientos.filter(m => m.tipo === 'salida' && m.origenDestino === tecnicoNombre);
 
     const data = salidas.map(m => ({
       fecha: new Date(m.fecha).toLocaleDateString('es-ES'),
+      foto: this.getArticuloFoto(articulos, m),
       codigo: m.codigo,
       nombre: m.articuloNombre,
       cantidad: m.cantidad,
@@ -138,6 +149,7 @@ export const reportService = {
       titulo: `Informe de Consumos por Técnico: ${tecnicoNombre}`,
       columnas: [
         { header: 'Fecha', key: 'fecha' },
+        { header: 'Foto', key: 'foto', format: 'image' },
         { header: 'Código Artículo', key: 'codigo' },
         { header: 'Artículo', key: 'nombre' },
         { header: 'Cantidad Retirada', key: 'cantidad', align: 'right' },
@@ -153,11 +165,12 @@ export const reportService = {
     };
   },
 
-  generarReporteProveedor(movimientos, proveedorNombre) {
+  generarReporteProveedor(movimientos, articulos = [], proveedorNombre) {
     const entradas = movimientos.filter(m => m.tipo === 'entrada' && m.origenDestino === proveedorNombre);
 
     const data = entradas.map(m => ({
       fecha: new Date(m.fecha).toLocaleDateString('es-ES'),
+      foto: this.getArticuloFoto(articulos, m),
       codigo: m.codigo,
       nombre: m.articuloNombre,
       cantidad: m.cantidad,
@@ -171,6 +184,7 @@ export const reportService = {
       titulo: `Informe de Suministros por Proveedor: ${proveedorNombre}`,
       columnas: [
         { header: 'Fecha', key: 'fecha' },
+        { header: 'Foto', key: 'foto', format: 'image' },
         { header: 'Código Artículo', key: 'codigo' },
         { header: 'Artículo', key: 'nombre' },
         { header: 'Cantidad Recibida', key: 'cantidad', align: 'right' },
@@ -212,11 +226,12 @@ export const reportService = {
     };
   },
 
-  generarReporteInventario(movimientos) {
+  generarReporteInventario(movimientos, articulos = []) {
     const ajustes = movimientos.filter(m => m.tipo === 'ajuste');
 
     const data = ajustes.map(m => ({
       fecha: new Date(m.fecha).toLocaleString('es-ES', { dateStyle: 'short' }),
+      foto: this.getArticuloFoto(articulos, m),
       codigo: m.codigo,
       nombre: m.articuloNombre,
       diferencia: m.cantidad, // cantidad es positiva o negativa en ajustes
@@ -231,6 +246,7 @@ export const reportService = {
       titulo: 'Informe de Descuadres y Ajustes de Inventario',
       columnas: [
         { header: 'Fecha Ajuste', key: 'fecha' },
+        { header: 'Foto', key: 'foto', format: 'image' },
         { header: 'Código', key: 'codigo' },
         { header: 'Artículo', key: 'nombre' },
         { header: 'Diferencia Stock', key: 'diferencia', align: 'right', format: 'diff' },

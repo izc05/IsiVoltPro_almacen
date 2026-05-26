@@ -24,6 +24,7 @@ export default function Personas() {
     editarTecnico, 
     crearProveedor, 
     editarProveedor,
+    eliminarProveedor,
     movimientos 
   } = useApp();
 
@@ -130,6 +131,12 @@ export default function Personas() {
       setModalAbierto(false);
     } catch (err) {
       setErrorForm(err.message);
+    }
+  };
+
+  const borrarProveedor = (prov) => {
+    if (confirm(`¿Eliminar el proveedor "${prov.nombre}"? Se quitará como proveedor principal de los artículos que lo usen.`)) {
+      eliminarProveedor(prov.id);
     }
   };
 
@@ -304,13 +311,20 @@ export default function Personas() {
                   )}
                 </div>
 
-                <div className="pt-4 border-t border-gray-100 flex items-center justify-end mt-4">
+                <div className="pt-4 border-t border-gray-100 flex items-center justify-end gap-2 mt-4">
                   <button 
                     onClick={() => abrirEditar(prov)} 
                     className="flex items-center space-x-1 px-3 py-1.5 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-lg text-xs font-semibold"
                   >
                     <Edit className="h-3 w-3" />
                     <span>Editar Ficha</span>
+                  </button>
+                  <button
+                    onClick={() => borrarProveedor(prov)}
+                    className="flex items-center space-x-1 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg text-xs font-semibold"
+                  >
+                    <X className="h-3 w-3" />
+                    <span>Borrar</span>
                   </button>
                 </div>
               </div>

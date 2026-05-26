@@ -13,13 +13,16 @@ import {
   X,
   Bell,
   ShieldCheck,
-  LogOut
+  LogOut,
+  Monitor,
+  Smartphone
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Layout({ children }) {
   const { activeTab, setActiveTab, notification, articulos, currentUser, roles, hasPermission, logout } = useApp();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [viewMode, setViewMode] = useState(localStorage.getItem('isivolt_view_mode') || 'auto');
 
   // Calcular artículos con stock bajo para poner alerta roja
   const stockBajoCount = articulos.filter(a => a.activo && a.stockActual <= a.stockMinimo).length;
@@ -37,6 +40,15 @@ export default function Layout({ children }) {
     { id: 'ajustes', label: 'Ajustes', icon: Settings },
   ].filter((item) => hasPermission(item.id));
   const mobileMenuItems = menuItems.filter((item) => item.id !== 'qr');
+  const setModoVista = (mode) => {
+    setViewMode(mode);
+    localStorage.setItem('isivolt_view_mode', mode);
+  };
+  const mainWidthClass = viewMode === 'mobile'
+    ? 'max-w-[430px] mx-auto border-x border-gray-100 bg-white'
+    : viewMode === 'pc'
+    ? 'min-w-[1120px]'
+    : 'max-w-7xl mx-auto';
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row relative">
@@ -148,6 +160,30 @@ export default function Layout({ children }) {
 
         {/* Footer Sidebar */}
         <div className="p-4 border-t border-gray-800 bg-gray-950/40 text-center text-xs text-gray-500">
+          <div className="mb-3 rounded-xl border border-gray-800 bg-gray-900 p-1">
+            <div className="mb-1 px-2 text-left text-[10px] font-black uppercase tracking-wider text-gray-500">Vista</div>
+            <div className="grid grid-cols-3 gap-1">
+              {[
+                { id: 'auto', label: 'Auto', icon: Monitor },
+                { id: 'pc', label: 'PC', icon: Monitor },
+                { id: 'mobile', label: 'Móvil', icon: Smartphone }
+              ].map((item) => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setModoVista(item.id)}
+                    className={`flex items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-[10px] font-bold ${
+                      viewMode === item.id ? 'bg-amber-500 text-gray-950' : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                    }`}
+                  >
+                    <Icon className="h-3 w-3" />
+                    {item.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
           <span className="font-medium text-gray-400">IsiVoltPro Almacén</span> v1.0.0
           <br />
           Modo LocalStorage
@@ -171,7 +207,7 @@ export default function Layout({ children }) {
 
       {/* CONTENEDOR PRINCIPAL */}
       <main className="flex-1 flex flex-col min-h-screen overflow-x-hidden pb-20 md:pb-0">
-        <div className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full">
+        <div className={`flex-1 p-4 md:p-8 w-full ${mainWidthClass}`}>
           {children}
         </div>
       </main>

@@ -3,6 +3,8 @@ import { useApp } from '../context/AppContext';
 import { excelService } from '../services/excelService';
 import { 
   Settings, 
+  Plus,
+  Edit,
   Download, 
   Upload, 
   Database, 
@@ -10,7 +12,11 @@ import {
   Trash2, 
   AlertTriangle, 
   CheckCircle,
-  FileJson
+  FileJson,
+  Tags,
+  MapPin,
+  Building2,
+  X
 } from 'lucide-react';
 
 export default function Ajustes() {
@@ -21,6 +27,17 @@ export default function Ajustes() {
     movimientos, 
     pedidos, 
     ajustes, 
+    sectores,
+    ubicaciones,
+    crearProveedor,
+    editarProveedor,
+    eliminarProveedor,
+    crearSector,
+    editarSector,
+    eliminarSector,
+    crearUbicacion,
+    editarUbicacion,
+    eliminarUbicacion,
     guardarAjustes, 
     restablecerBD,
     reemplazarBaseDatos,
@@ -462,6 +479,170 @@ export default function Ajustes() {
 
       </div>
 
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+        <MasterList
+          title="Sectores"
+          description="Áreas de trabajo disponibles al crear artículos y técnicos."
+          icon={Tags}
+          items={(sectores || []).map((sector) => ({ id: sector, label: sector }))}
+          placeholder="Nuevo sector..."
+          onCreate={crearSector}
+          onRename={(item, value) => editarSector(item.label, value)}
+          onDelete={(item) => {
+            if (confirm(`¿Eliminar el sector "${item.label}"? Los artículos se moverán a "Sin sector".`)) {
+              eliminarSector(item.label);
+            }
+          }}
+        />
+
+        <MasterList
+          title="Ubicaciones"
+          description="Ubicaciones predeterminadas para asignar rápido en el catálogo."
+          icon={MapPin}
+          items={(ubicaciones || []).map((ubicacion) => ({ id: ubicacion, label: ubicacion }))}
+          placeholder="Ej. A-02-B1"
+          uppercase
+          onCreate={crearUbicacion}
+          onRename={(item, value) => editarUbicacion(item.label, value)}
+          onDelete={(item) => {
+            if (confirm(`¿Eliminar la ubicación "${item.label}"? Se quitará de los artículos que la usen.`)) {
+              eliminarUbicacion(item.label);
+            }
+          }}
+        />
+
+        <MasterList
+          title="Proveedores"
+          description="Alta rápida, renombrado y borrado de proveedores."
+          icon={Building2}
+          items={(proveedores || []).map((proveedor) => ({ ...proveedor, id: proveedor.id, label: proveedor.nombre, meta: proveedor.cif || proveedor.telefono || proveedor.email }))}
+          placeholder="Nuevo proveedor..."
+          onCreate={(value) => crearProveedor({ nombre: value, cif: '', telefono: '', email: '', direccion: '', personaContacto: '', observaciones: '' })}
+          onRename={(item, value) => editarProveedor(item.id, { ...item, nombre: value })}
+          onDelete={(item) => {
+            if (confirm(`¿Eliminar el proveedor "${item.label}"? Se quitará como proveedor principal de los artículos.`)) {
+              eliminarProveedor(item.id);
+            }
+          }}
+        />
+      </div>
+
+    </div>
+  );
+}
+
+function MasterList({ title, description, icon: Icon, items, placeholder, uppercase = false, onCreate, onRename, onDelete }) {
+  const [nuevo, setNuevo] = useState('');
+  const [editando, setEditando] = useState(null);
+  const [valorEditado, setValorEditado] = useState('');
+  const [error, setError] = useState('');
+
+  const limpiar = (value) => uppercase ? value.trim().toUpperCase() : value.trim();
+
+  const crear = () => {
+    setError('');
+    try {
+      const value = limpiar(nuevo);
+      if (!value) {
+        setError('Introduce un valor.');
+        return;
+      }
+      onCreate(value);
+      setNuevo('');
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const guardarEdicion = (item) => {
+    setError('');
+    try {
+      const value = limpiar(valorEditado);
+      if (!value) {
+        setError('Introduce un valor.');
+        return;
+      }
+      onRename(item, value);
+      setEditando(null);
+      setValorEditado('');
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  return (
+    <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-xs">
+      <div className="mb-4 flex items-start gap-3">
+        <span className="rounded-xl bg-amber-50 p-2 text-amber-600"><Icon className="h-5 w-5" /></span>
+        <div>
+          <h3 className="text-lg font-bold text-gray-900">{title}</h3>
+          <p className="mt-0.5 text-xs font-semibold text-gray-400">{description}</p>
+        </div>
+      </div>
+
+      {error && (
+        <div className="mb-3 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-xs font-bold text-red-700">
+          {error}
+        </div>
+      )}
+
+      <div className="mb-4 flex gap-2">
+        <input
+          value={nuevo}
+          onChange={(event) => setNuevo(uppercase ? event.target.value.toUpperCase() : event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') crear();
+          }}
+          placeholder={placeholder}
+          className="min-w-0 flex-1 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-semibold outline-hidden focus:border-amber-500"
+        />
+        <button onClick={crear} className="inline-flex items-center justify-center rounded-xl bg-amber-500 px-3 text-white hover:bg-amber-600" title="Añadir">
+          <Plus className="h-5 w-5" />
+        </button>
+      </div>
+
+      <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
+        {items.map((item) => (
+          <div key={item.id} className="rounded-xl border border-gray-100 bg-gray-50 p-3">
+            {editando === item.id ? (
+              <div className="flex gap-2">
+                <input
+                  value={valorEditado}
+                  onChange={(event) => setValorEditado(uppercase ? event.target.value.toUpperCase() : event.target.value)}
+                  className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold outline-hidden focus:border-amber-500"
+                />
+                <button onClick={() => guardarEdicion(item)} className="rounded-lg bg-gray-950 px-3 text-xs font-bold text-white">Guardar</button>
+                <button onClick={() => setEditando(null)} className="rounded-lg bg-gray-200 px-2 text-gray-600"><X className="h-4 w-4" /></button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-black text-gray-900">{item.label}</p>
+                  {item.meta && <p className="mt-0.5 truncate text-[10px] font-semibold text-gray-400">{item.meta}</p>}
+                </div>
+                <div className="flex shrink-0 items-center gap-1">
+                  <button
+                    onClick={() => {
+                      setEditando(item.id);
+                      setValorEditado(item.label);
+                    }}
+                    className="rounded-lg bg-white p-2 text-gray-500 hover:bg-gray-100"
+                    title="Editar"
+                  >
+                    <Edit className="h-4 w-4" />
+                  </button>
+                  <button onClick={() => onDelete(item)} className="rounded-lg bg-white p-2 text-rose-500 hover:bg-rose-50" title="Borrar">
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+        {items.length === 0 && (
+          <p className="rounded-xl border border-dashed border-gray-200 p-6 text-center text-sm font-semibold text-gray-400">Sin registros.</p>
+        )}
+      </div>
     </div>
   );
 }

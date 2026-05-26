@@ -472,7 +472,17 @@ function PhotoInput({ label, image, onFile, onClear }) {
   return (
     <div>
       <span className="label-mini flex items-center gap-1"><Camera className="h-3.5 w-3.5 text-amber-500" /> {label}</span>
-      <input type="file" accept="image/*" onChange={onFile} className="w-full text-xs text-gray-400 file:mr-4 file:rounded-lg file:border-0 file:bg-gray-100 file:px-4 file:py-2 file:text-xs file:font-semibold file:text-gray-700 hover:file:bg-gray-200" />
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-xs font-bold text-white hover:bg-amber-600">
+          <Camera className="h-4 w-4" />
+          Hacer foto
+          <input type="file" accept="image/*" capture="environment" onChange={onFile} className="hidden" />
+        </label>
+        <label className="inline-flex cursor-pointer items-center justify-center rounded-lg bg-gray-100 px-4 py-2 text-xs font-bold text-gray-700 hover:bg-gray-200">
+          Elegir archivo
+          <input type="file" accept="image/*" onChange={onFile} className="hidden" />
+        </label>
+      </div>
       {image && (
         <div className="relative mt-2 w-36 rounded-xl border border-gray-200 bg-gray-50 p-2">
           <img src={image} alt={label} className="h-24 w-full rounded-lg object-cover" />

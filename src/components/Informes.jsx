@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { reportService } from '../services/reportService';
+import { imageStore } from '../services/imageStore';
 import { 
   Printer,
   FileBarChart2
@@ -15,33 +16,61 @@ export default function Informes() {
   const [seleccionPersona, setSeleccionPersona] = useState('');
 
   const [reporteGenerado, setReporteGenerado] = useState(null);
+  const [imagenesArticulos, setImagenesArticulos] = useState({});
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadImages = async () => {
+      const next = {};
+      await Promise.all(articulos.map(async (art) => {
+        if (art.fotoId) {
+          next[art.id] = await imageStore.get(art.fotoId);
+        } else if (art.foto) {
+          next[art.id] = art.foto;
+        }
+      }));
+      if (!cancelled) {
+        setImagenesArticulos(next);
+      }
+    };
+
+    loadImages();
+    return () => {
+      cancelled = true;
+    };
+  }, [articulos]);
 
   const generarReporte = () => {
     let rep = null;
+    const articulosReporte = articulos.map((art) => ({
+      ...art,
+      foto: imagenesArticulos[art.id] || art.foto || ''
+    }));
     switch (tipoReporte) {
       case 'stock-actual':
-        rep = reportService.generarReporteStockActual(articulos);
+        rep = reportService.generarReporteStockActual(articulosReporte);
         break;
       case 'stock-bajo':
-        rep = reportService.generarReporteStockBajo(articulos);
+        rep = reportService.generarReporteStockBajo(articulosReporte);
         break;
       case 'entradas':
-        rep = reportService.generarReporteMovimientos(movimientos, 'entrada', fechaInicio, fechaFin);
+        rep = reportService.generarReporteMovimientos(movimientos, articulosReporte, 'entrada', fechaInicio, fechaFin);
         break;
       case 'salidas':
-        rep = reportService.generarReporteMovimientos(movimientos, 'salida', fechaInicio, fechaFin);
+        rep = reportService.generarReporteMovimientos(movimientos, articulosReporte, 'salida', fechaInicio, fechaFin);
         break;
       case 'tecnico':
-        rep = reportService.generarReporteTecnico(movimientos, seleccionPersona);
+        rep = reportService.generarReporteTecnico(movimientos, articulosReporte, seleccionPersona);
         break;
       case 'proveedor':
-        rep = reportService.generarReporteProveedor(movimientos, seleccionPersona);
+        rep = reportService.generarReporteProveedor(movimientos, articulosReporte, seleccionPersona);
         break;
       case 'pedidos':
         rep = reportService.generarReportePedidos(pedidos);
         break;
       case 'inventario':
-        rep = reportService.generarReporteInventario(movimientos);
+        rep = reportService.generarReporteInventario(movimientos, articulosReporte);
         break;
       default:
         break;

@@ -21,6 +21,7 @@ export default function Articulos() {
     proveedores, 
     almacenes,
     sectores,
+    ubicaciones,
     crearArticulo, 
     editarArticulo, 
     movimientos
@@ -608,11 +609,15 @@ export default function Articulos() {
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Ubicación (Almacén-Estante-Balda)</label>
                   <input
                     type="text"
+                    list="ubicaciones-form"
                     value={form.ubicacion || ''}
                     onChange={(e) => setForm({ ...form, ubicacion: e.target.value.toUpperCase() })}
                     placeholder="Ej. A-02-B1"
                     className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-hidden focus:border-amber-500 font-mono"
                   />
+                  <datalist id="ubicaciones-form">
+                    {(ubicaciones || []).map((ubicacion) => <option key={ubicacion} value={ubicacion} />)}
+                  </datalist>
                 </div>
 
                 {/* Proveedor Principal */}
@@ -649,12 +654,17 @@ export default function Articulos() {
                   <Camera className="h-3.5 w-3.5 text-amber-500" />
                   <span>Foto del artículo</span>
                 </label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFotoArticulo}
-                  className="w-full text-xs text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
-                />
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-xs font-bold text-white hover:bg-amber-600">
+                    <Camera className="h-4 w-4" />
+                    Hacer foto
+                    <input type="file" accept="image/*" capture="environment" onChange={handleFotoArticulo} className="hidden" />
+                  </label>
+                  <label className="inline-flex cursor-pointer items-center justify-center rounded-lg bg-gray-100 px-4 py-2 text-xs font-bold text-gray-700 hover:bg-gray-200">
+                    Elegir archivo
+                    <input type="file" accept="image/*" onChange={handleFotoArticulo} className="hidden" />
+                  </label>
+                </div>
                 {(form.foto || form.fotoId) && (
                   <div className="relative mt-2 w-40 rounded-xl border border-gray-200 bg-gray-50 p-2">
                     <img

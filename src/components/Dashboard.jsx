@@ -66,6 +66,7 @@ export default function Dashboard() {
     })
     .filter((sector) => sector.articulos > 0)
     .sort((a, b) => b.articulos - a.articulos);
+  const maxUnidadesSector = Math.max(...resumenSectores.map((sector) => sector.unidades), 1);
 
   // 2. Análisis de movimientos (Materiales más retirados y Técnicos con más salidas)
   const rankingMateriales = {};
@@ -73,16 +74,24 @@ export default function Dashboard() {
 
   movimientos.forEach(m => {
     if (m.tipo === 'salida') {
-      // Material
-      rankingMateriales[m.articuloNombre] = (rankingMateriales[m.articuloNombre] || 0) + m.cantidad;
-      // Técnico
+      const key = m.articuloId || m.codigo || m.articuloNombre;
+      const art = articulos.find((item) => item.id === m.articuloId || item.codigo === m.codigo);
+      rankingMateriales[key] = rankingMateriales[key] || {
+        nombre: m.articuloNombre,
+        codigo: m.codigo,
+        foto: art?.foto,
+        unidad: art?.unidad || 'uds',
+        total: 0
+      };
+      rankingMateriales[key].total += m.cantidad;
       rankingTecnicos[m.origenDestino] = (rankingTecnicos[m.origenDestino] || 0) + m.cantidad;
     }
   });
 
-  const materialesMasRetirados = Object.entries(rankingMateriales)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 3);
+  const materialesMasRetirados = Object.values(rankingMateriales)
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 5);
+  const maxMaterialRetirado = Math.max(...materialesMasRetirados.map((item) => item.total), 1);
 
   const tecnicosMasActivos = Object.entries(rankingTecnicos)
     .sort((a, b) => b[1] - a[1])
@@ -237,6 +246,9 @@ export default function Dashboard() {
                 <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Unidades</span>
                 <span className="text-2xl font-black text-gray-900">{item.unidades}</span>
               </div>
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-white">
+                <div className="h-full rounded-full bg-amber-500" style={{ width: `${Math.max(8, (item.unidades / maxUnidadesSector) * 100)}%` }} />
+              </div>
             </div>
           ))}
         </div>
@@ -248,11 +260,11 @@ export default function Dashboard() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           
           <button 
-            onClick={() => setActiveTab('inventario')}
+            onClick={() => setActiveTab('qr')}
             className="flex flex-col items-center justify-center p-4 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-semibold shadow-xs transition-colors space-y-2 text-center"
           >
             <QrCode className="h-6 w-6" />
-            <span className="text-sm">Escanear QR / Recuento</span>
+            <span className="text-sm">QR rápido</span>
           </button>
 
           <button 
@@ -350,15 +362,28 @@ export default function Dashboard() {
               <span>Materiales Más Retirados</span>
             </h3>
             <div className="space-y-3">
-              {materialesMasRetirados.map(([nombre, total], index) => (
-                <div key={nombre} className="flex items-center justify-between p-3 rounded-xl border border-gray-50">
-                  <div className="flex items-center space-x-3">
-                    <span className="font-bold text-sm text-gray-400 w-5">#{index + 1}</span>
-                    <span className="font-medium text-sm text-gray-800 line-clamp-1">{nombre}</span>
+              {materialesMasRetirados.map((item, index) => (
+                <div key={`${item.codigo}-${item.nombre}`} className="rounded-xl border border-gray-50 p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex min-w-0 items-center space-x-3">
+                      <span className="w-5 text-sm font-bold text-gray-400">#{index + 1}</span>
+                      {item.foto ? (
+                        <img src={item.foto} alt={item.nombre} className="h-10 w-10 rounded-lg border border-gray-100 bg-gray-50 object-contain" />
+                      ) : (
+                        <span className="h-10 w-10 rounded-lg bg-gray-100" />
+                      )}
+                      <div className="min-w-0">
+                        <span className="line-clamp-1 text-sm font-bold text-gray-800">{item.nombre}</span>
+                        <p className="font-mono text-[10px] font-semibold text-gray-400">{item.codigo}</p>
+                      </div>
+                    </div>
+                    <span className="rounded-lg bg-gray-100 px-2 py-1 text-sm font-bold text-gray-900">
+                      {item.total} {item.unidad}
+                    </span>
                   </div>
-                  <span className="font-bold text-sm text-gray-900 bg-gray-100 px-2 py-1 rounded-lg">
-                    {total} uds
-                  </span>
+                  <div className="mt-3 h-2 overflow-hidden rounded-full bg-gray-100">
+                    <div className="h-full rounded-full bg-rose-500" style={{ width: `${Math.max(8, (item.total / maxMaterialRetirado) * 100)}%` }} />
+                  </div>
                 </div>
               ))}
               {materialesMasRetirados.length === 0 && (

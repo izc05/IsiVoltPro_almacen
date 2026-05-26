@@ -71,6 +71,19 @@ export const DEFAULT_SECTORES = [
   'Cerrajería'
 ];
 
+export const DEFAULT_UBICACIONES = [
+  'A-01-B2',
+  'A-02-D1',
+  'A-04-A1',
+  'B-03-A1',
+  'B-03-A2',
+  'B-03-B2',
+  'B-04-C1',
+  'C-01-C3',
+  'D-02-B1',
+  'E-01-A1'
+];
+
 const KEYS = {
   ARTICULOS: 'isivolt_articulos',
   TECNICOS: 'isivolt_tecnicos',
@@ -81,7 +94,9 @@ const KEYS = {
   USUARIOS: 'isivolt_usuarios',
   CURRENT_USER: 'isivolt_current_user',
   ALMACENES: 'isivolt_almacenes',
-  AUDITORIA: 'isivolt_auditoria'
+  AUDITORIA: 'isivolt_auditoria',
+  SECTORES: 'isivolt_sectores',
+  UBICACIONES: 'isivolt_ubicaciones'
 };
 
 const normalizeArticulo = (articulo) => {
@@ -144,6 +159,12 @@ export const storageService = {
     if (!localStorage.getItem(KEYS.ALMACENES)) {
       localStorage.setItem(KEYS.ALMACENES, JSON.stringify(DEFAULT_ALMACENES));
     }
+    if (!localStorage.getItem(KEYS.SECTORES)) {
+      localStorage.setItem(KEYS.SECTORES, JSON.stringify(DEFAULT_SECTORES));
+    }
+    if (!localStorage.getItem(KEYS.UBICACIONES)) {
+      localStorage.setItem(KEYS.UBICACIONES, JSON.stringify(DEFAULT_UBICACIONES));
+    }
     if (!localStorage.getItem(KEYS.AUDITORIA)) {
       localStorage.setItem(KEYS.AUDITORIA, JSON.stringify([]));
     }
@@ -160,6 +181,16 @@ export const storageService = {
     const movimientos = JSON.parse(localStorage.getItem(KEYS.MOVIMIENTOS) || '[]');
     if (movimientos.some((mov) => !mov.almacenId || !mov.almacenNombre)) {
       localStorage.setItem(KEYS.MOVIMIENTOS, JSON.stringify(movimientos.map(normalizeMovimiento)));
+    }
+
+    const sectores = JSON.parse(localStorage.getItem(KEYS.SECTORES) || '[]');
+    if (!Array.isArray(sectores) || sectores.length === 0) {
+      localStorage.setItem(KEYS.SECTORES, JSON.stringify(DEFAULT_SECTORES));
+    }
+
+    const ubicaciones = JSON.parse(localStorage.getItem(KEYS.UBICACIONES) || '[]');
+    if (!Array.isArray(ubicaciones) || ubicaciones.length === 0) {
+      localStorage.setItem(KEYS.UBICACIONES, JSON.stringify(DEFAULT_UBICACIONES));
     }
   },
 
@@ -217,6 +248,14 @@ export const storageService = {
     return this.get('ALMACENES');
   },
 
+  getSectores() {
+    return this.get('SECTORES');
+  },
+
+  getUbicaciones() {
+    return this.get('UBICACIONES');
+  },
+
   getAuditoria() {
     return this.get('AUDITORIA');
   },
@@ -244,6 +283,8 @@ export const storageService = {
         ajustes: this.getAjustes(),
         usuarios: this.get('USUARIOS'),
         almacenes: this.get('ALMACENES'),
+        sectores: this.get('SECTORES'),
+        ubicaciones: this.get('UBICACIONES'),
         auditoria: this.get('AUDITORIA'),
         images: await imageStore.all()
       }
@@ -272,6 +313,8 @@ export const storageService = {
     localStorage.setItem(KEYS.AJUSTES, JSON.stringify(data.ajustes || {}));
     localStorage.setItem(KEYS.USUARIOS, JSON.stringify(data.usuarios || DEMO_USUARIOS));
     localStorage.setItem(KEYS.ALMACENES, JSON.stringify(data.almacenes || DEFAULT_ALMACENES));
+    localStorage.setItem(KEYS.SECTORES, JSON.stringify(data.sectores || DEFAULT_SECTORES));
+    localStorage.setItem(KEYS.UBICACIONES, JSON.stringify(data.ubicaciones || DEFAULT_UBICACIONES));
     localStorage.setItem(KEYS.AUDITORIA, JSON.stringify(data.auditoria || []));
     await imageStore.importAll(data.images || []);
     this.migrate();
@@ -295,6 +338,8 @@ export const storageService = {
     localStorage.removeItem(KEYS.PEDIDOS);
     localStorage.removeItem(KEYS.AJUSTES);
     localStorage.removeItem(KEYS.ALMACENES);
+    localStorage.removeItem(KEYS.SECTORES);
+    localStorage.removeItem(KEYS.UBICACIONES);
     localStorage.removeItem(KEYS.AUDITORIA);
     this.init();
   }

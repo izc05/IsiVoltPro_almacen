@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { DEFAULT_SECTORES, PERMISSIONS, ROLES, storageService } from '../services/storageService';
+import { DEFAULT_SECTORES, DEFAULT_UBICACIONES, PERMISSIONS, ROLES, storageService } from '../services/storageService';
 import { inventoryService } from '../services/inventoryService';
 
 const AppContext = createContext();
@@ -20,6 +20,7 @@ export function AppProvider({ children }) {
   const [almacenes, setAlmacenes] = useState([]);
   const [auditoria, setAuditoria] = useState([]);
   const [sectores, setSectores] = useState(DEFAULT_SECTORES);
+  const [ubicaciones, setUbicaciones] = useState(DEFAULT_UBICACIONES);
   const [ajustes, setAjustes] = useState({});
   const [currentUser, setCurrentUser] = useState(storageService.getCurrentUser());
   const [notification, setNotification] = useState(null);
@@ -36,11 +37,16 @@ export function AppProvider({ children }) {
     setAuditoria(storageService.getAuditoria());
     setAjustes(storageService.getAjustes());
 
+    const sectoresBase = storageService.getSectores();
     const usados = [
       ...inventoryService.getArticulos().map((art) => art.categoria),
       ...inventoryService.getTecnicos().map((tec) => tec.seccion)
     ].filter(Boolean);
-    setSectores(Array.from(new Set([...DEFAULT_SECTORES, ...usados])).sort((a, b) => a.localeCompare(b, 'es')));
+    setSectores(Array.from(new Set([...sectoresBase, ...usados])).sort((a, b) => a.localeCompare(b, 'es')));
+
+    const ubicacionesBase = storageService.getUbicaciones();
+    const ubicacionesUsadas = inventoryService.getArticulos().map((art) => art.ubicacion).filter(Boolean);
+    setUbicaciones(Array.from(new Set([...ubicacionesBase, ...ubicacionesUsadas])).sort((a, b) => a.localeCompare(b, 'es')));
   };
 
   useEffect(() => {
@@ -196,6 +202,82 @@ export function AppProvider({ children }) {
       mostrarNotificacion(e.message, 'error');
       throw e;
     }
+  };
+
+  const handleEliminarProveedor = (id) => {
+    try {
+      const eliminado = inventoryService.eliminarProveedor(id);
+      refrescarDatos();
+      mostrarNotificacion(`Proveedor "${eliminado.nombre}" eliminado.`);
+      return eliminado;
+    } catch (e) {
+      mostrarNotificacion(e.message, 'error');
+      throw e;
+    }
+  };
+
+  const guardarListaMaestra = (key, valores) => {
+    const limpios = Array.from(new Set(valores.map((valor) => valor.trim()).filter(Boolean)));
+    storageService.set(key, limpios);
+    return limpios;
+  };
+
+  const handleCrearSector = (nombre) => {
+    const limpio = nombre.trim();
+    if (!limpio) throw new Error('El sector no puede estar vacío.');
+    guardarListaMaestra('SECTORES', [...storageService.getSectores(), limpio]);
+    storageService.addAudit({ accion: 'crear', entidad: 'sector', entidadId: limpio, usuario: currentUser?.nombre || 'Administrador', antes: null, despues: { nombre: limpio } });
+    refrescarDatos();
+    mostrarNotificacion(`Sector "${limpio}" creado.`);
+  };
+
+  const handleEditarSector = (anterior, nuevo) => {
+    const limpio = nuevo.trim();
+    if (!limpio) throw new Error('El sector no puede estar vacío.');
+    const sectoresActualizados = storageService.getSectores().map((sector) => sector === anterior ? limpio : sector);
+    guardarListaMaestra('SECTORES', sectoresActualizados);
+    storageService.set('ARTICULOS', inventoryService.getArticulos().map((art) => art.categoria === anterior ? { ...art, categoria: limpio } : art));
+    storageService.set('TECNICOS', inventoryService.getTecnicos().map((tec) => tec.seccion === anterior ? { ...tec, seccion: limpio } : tec));
+    storageService.addAudit({ accion: 'editar', entidad: 'sector', entidadId: anterior, usuario: currentUser?.nombre || 'Administrador', antes: { nombre: anterior }, despues: { nombre: limpio } });
+    refrescarDatos();
+    mostrarNotificacion(`Sector "${anterior}" actualizado.`);
+  };
+
+  const handleEliminarSector = (nombre) => {
+    guardarListaMaestra('SECTORES', storageService.getSectores().filter((sector) => sector !== nombre));
+    storageService.set('ARTICULOS', inventoryService.getArticulos().map((art) => art.categoria === nombre ? { ...art, categoria: 'Sin sector' } : art));
+    storageService.set('TECNICOS', inventoryService.getTecnicos().map((tec) => tec.seccion === nombre ? { ...tec, seccion: 'Sin sector' } : tec));
+    storageService.addAudit({ accion: 'eliminar', entidad: 'sector', entidadId: nombre, usuario: currentUser?.nombre || 'Administrador', antes: { nombre }, despues: null });
+    refrescarDatos();
+    mostrarNotificacion(`Sector "${nombre}" eliminado.`);
+  };
+
+  const handleCrearUbicacion = (nombre) => {
+    const limpio = nombre.trim().toUpperCase();
+    if (!limpio) throw new Error('La ubicación no puede estar vacía.');
+    guardarListaMaestra('UBICACIONES', [...storageService.getUbicaciones(), limpio]);
+    storageService.addAudit({ accion: 'crear', entidad: 'ubicacion', entidadId: limpio, usuario: currentUser?.nombre || 'Administrador', antes: null, despues: { nombre: limpio } });
+    refrescarDatos();
+    mostrarNotificacion(`Ubicación "${limpio}" creada.`);
+  };
+
+  const handleEditarUbicacion = (anterior, nuevo) => {
+    const limpio = nuevo.trim().toUpperCase();
+    if (!limpio) throw new Error('La ubicación no puede estar vacía.');
+    const ubicacionesActualizadas = storageService.getUbicaciones().map((ubicacion) => ubicacion === anterior ? limpio : ubicacion);
+    guardarListaMaestra('UBICACIONES', ubicacionesActualizadas);
+    storageService.set('ARTICULOS', inventoryService.getArticulos().map((art) => art.ubicacion === anterior ? { ...art, ubicacion: limpio } : art));
+    storageService.addAudit({ accion: 'editar', entidad: 'ubicacion', entidadId: anterior, usuario: currentUser?.nombre || 'Administrador', antes: { nombre: anterior }, despues: { nombre: limpio } });
+    refrescarDatos();
+    mostrarNotificacion(`Ubicación "${anterior}" actualizada.`);
+  };
+
+  const handleEliminarUbicacion = (nombre) => {
+    guardarListaMaestra('UBICACIONES', storageService.getUbicaciones().filter((ubicacion) => ubicacion !== nombre));
+    storageService.set('ARTICULOS', inventoryService.getArticulos().map((art) => art.ubicacion === nombre ? { ...art, ubicacion: '' } : art));
+    storageService.addAudit({ accion: 'eliminar', entidad: 'ubicacion', entidadId: nombre, usuario: currentUser?.nombre || 'Administrador', antes: { nombre }, despues: null });
+    refrescarDatos();
+    mostrarNotificacion(`Ubicación "${nombre}" eliminada.`);
   };
 
   // --- REGISTRO DE MOVIMIENTOS ---
@@ -372,6 +454,7 @@ export function AppProvider({ children }) {
       almacenes,
       auditoria,
       sectores,
+      ubicaciones,
       ajustes,
       currentUser,
       roles: ROLES,
@@ -388,6 +471,13 @@ export function AppProvider({ children }) {
       editarTecnico: handleEditarTecnico,
       crearProveedor: handleCrearProveedor,
       editarProveedor: handleEditarProveedor,
+      eliminarProveedor: handleEliminarProveedor,
+      crearSector: handleCrearSector,
+      editarSector: handleEditarSector,
+      eliminarSector: handleEliminarSector,
+      crearUbicacion: handleCrearUbicacion,
+      editarUbicacion: handleEditarUbicacion,
+      eliminarUbicacion: handleEliminarUbicacion,
       registrarEntrada: handleRegistrarEntrada,
       registrarSalida: handleRegistrarSalida,
       registrarInventario: handleRegistrarInventario,

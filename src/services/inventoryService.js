@@ -159,6 +159,25 @@ export const inventoryService = {
     return proveedores[idx];
   },
 
+  eliminarProveedor(id) {
+    const proveedores = this.getProveedores();
+    const idx = proveedores.findIndex(p => p.id === id);
+    if (idx === -1) throw new Error('Proveedor no encontrado');
+
+    const eliminado = proveedores[idx];
+    proveedores.splice(idx, 1);
+    storageService.set('PROVEEDORES', proveedores);
+
+    const articulos = this.getArticulos().map((articulo) => (
+      articulo.proveedorPrincipal === eliminado.nombre
+        ? { ...articulo, proveedorPrincipal: '' }
+        : articulo
+    ));
+    storageService.set('ARTICULOS', articulos);
+    addAudit('eliminar', 'proveedor', id, eliminado, null);
+    return eliminado;
+  },
+
   // --- MOVIMIENTOS Y CONTROL DE STOCK ---
   getMovimientos() {
     return storageService.get('MOVIMIENTOS');

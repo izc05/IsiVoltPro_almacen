@@ -2,8 +2,8 @@ const CACHE_NAME = 'isivoltpro-almacen-v1';
 const ASSETS = [
   './',
   './index.html',
-  '/favicon.svg',
-  '/manifest.webmanifest'
+  './favicon.svg',
+  './manifest.webmanifest'
 ];
 
 self.addEventListener('install', (e) => {

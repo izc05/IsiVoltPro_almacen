@@ -2,6 +2,9 @@
 
 @import "tailwindcss";
 
+@source "../index.html";
+@source "./**/*.{js,jsx,ts,tsx}";
+
 @theme {
   --font-sans: 'Outfit', sans-serif;
   --color-amber-primary: #f59e0b;

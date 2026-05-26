@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { 
   Plus, 
@@ -13,6 +13,7 @@ import {
   Camera
 } from 'lucide-react';
 import { imageService } from '../services/imageService';
+import { imageStore } from '../services/imageStore';
 
 export default function Articulos() {
   const { 
@@ -39,6 +40,7 @@ export default function Articulos() {
   const [articuloFicha, setArticuloFicha] = useState(null);
   const [modalQrAbierto, setModalQrAbierto] = useState(false);
   const [articuloQr, setArticuloQr] = useState(null);
+  const [imagenes, setImagenes] = useState({});
 
   // Estado del Formulario
   const [form, setForm] = useState({
@@ -55,10 +57,34 @@ export default function Articulos() {
     proveedorPrincipal: '',
     precioEstimado: 0,
     foto: null,
+    fotoId: null,
     activo: true
   });
 
   const [formError, setFormError] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadImages = async () => {
+      const next = {};
+      await Promise.all(articulos.map(async (art) => {
+        if (art.fotoId) {
+          next[art.id] = await imageStore.get(art.fotoId);
+        } else if (art.foto) {
+          next[art.id] = art.foto;
+        }
+      }));
+      if (!cancelled) {
+        setImagenes(next);
+      }
+    };
+
+    loadImages();
+    return () => {
+      cancelled = true;
+    };
+  }, [articulos]);
 
   // Categorías únicas
   const categorias = Array.from(new Set(articulos.map(a => a.categoria).filter(Boolean)));
@@ -93,6 +119,7 @@ export default function Articulos() {
       proveedorPrincipal: proveedores[0]?.nombre || '',
       precioEstimado: 0,
       foto: null,
+      fotoId: null,
       activo: true
     });
     setModoEdicion(false);
@@ -118,7 +145,7 @@ export default function Articulos() {
     setModalQrAbierto(true);
   };
 
-  const guardar = (e) => {
+  const guardar = async (e) => {
     e.preventDefault();
     setFormError('');
 
@@ -128,10 +155,18 @@ export default function Articulos() {
     }
 
     try {
+      const payload = { ...form };
+      if (form.foto && form.foto.startsWith('data:')) {
+        payload.fotoId = await imageStore.save(form.foto, {
+          id: form.fotoId || undefined,
+          tipo: 'articulo'
+        });
+        payload.foto = null;
+      }
       if (modoEdicion) {
-        editarArticulo(articuloSeleccionado.id, form);
+        editarArticulo(articuloSeleccionado.id, payload);
       } else {
-        crearArticulo(form);
+        crearArticulo(payload);
       }
       setModalAbierto(false);
     } catch (err) {
@@ -151,6 +186,19 @@ export default function Articulos() {
     const image = await imageService.compress(file);
     setForm({ ...form, foto: image });
   };
+
+  const quitarFotoArticulo = async () => {
+    if (form.fotoId) {
+      await imageStore.remove(form.fotoId);
+    }
+    setForm({ ...form, foto: null, fotoId: null });
+  };
+
+  const getArticuloImage = (art) => {
+    return imagenes[art.id] || art.foto || imageService.placeholder(art.nombre);
+  };
+
+  const hasArticuloImage = (art) => Boolean(imagenes[art.id] || art.foto || art.fotoId);
 
   // Enlace del QR
   const getQrUrl = (codigo) => {
@@ -236,10 +284,11 @@ export default function Articulos() {
       </div>
 
       {/* VISTA DE LA TABLA (PC) */}
-      <div className="hidden lg:block bg-white rounded-2xl shadow-xs border border-gray-100 overflow-hidden">
-        <table className="w-full border-collapse text-left text-sm text-gray-500">
+      <div className="hidden lg:block bg-white rounded-2xl shadow-xs border border-gray-100 overflow-x-auto">
+        <table className="w-full min-w-[1120px] border-collapse text-left text-sm text-gray-500">
           <thead className="bg-gray-50 text-xs text-gray-400 uppercase font-semibold">
             <tr>
+              <th scope="col" className="px-6 py-4">Foto</th>
               <th scope="col" className="px-6 py-4">Código</th>
               <th scope="col" className="px-6 py-4">Artículo</th>
               <th scope="col" className="px-6 py-4">Categoría</th>
@@ -255,6 +304,16 @@ export default function Articulos() {
               const esBajo = art.stockActual <= art.stockMinimo;
               return (
                 <tr key={art.id} className="hover:bg-gray-50/70 transition-colors">
+                  <td className="px-6 py-4">
+                    <img
+                      src={getArticuloImage(art)}
+                      alt={art.nombre}
+                      className="h-14 w-16 rounded-lg border border-gray-100 bg-gray-50 object-cover"
+                    />
+                    {!hasArticuloImage(art) && (
+                      <span className="mt-1 block text-[10px] font-bold text-gray-300">Sin foto</span>
+                    )}
+                  </td>
                   <td className="px-6 py-4 font-mono text-gray-900">{art.codigo}</td>
                   <td className="px-6 py-4">
                     <div className="font-semibold text-gray-800">{art.nombre}</div>
@@ -306,7 +365,7 @@ export default function Articulos() {
             })}
             {articulosFiltrados.length === 0 && (
               <tr>
-                <td colSpan="8" className="px-6 py-12 text-center text-gray-400">No se encontraron artículos.</td>
+                <td colSpan="9" className="px-6 py-12 text-center text-gray-400">No se encontraron artículos.</td>
               </tr>
             )}
           </tbody>
@@ -319,6 +378,11 @@ export default function Articulos() {
           const esBajo = art.stockActual <= art.stockMinimo;
           return (
             <div key={art.id} className="bg-white p-5 rounded-2xl shadow-xs border border-gray-100 flex flex-col justify-between space-y-4">
+              <img
+                src={getArticuloImage(art)}
+                alt={art.nombre}
+                className="h-40 w-full rounded-xl border border-gray-100 bg-gray-50 object-cover"
+              />
               <div>
                 <div className="flex items-center justify-between">
                   <span className="font-mono text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-sm">{art.codigo}</span>
@@ -569,12 +633,16 @@ export default function Articulos() {
                   onChange={handleFotoArticulo}
                   className="w-full text-xs text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
                 />
-                {form.foto && (
+                {(form.foto || form.fotoId) && (
                   <div className="relative mt-2 w-40 rounded-xl border border-gray-200 bg-gray-50 p-2">
-                    <img src={form.foto} alt="Artículo" className="h-28 w-full rounded-lg object-cover" />
+                    <img
+                      src={form.foto || imagenes[articuloSeleccionado?.id] || imageService.placeholder(form.nombre)}
+                      alt="Artículo"
+                      className="h-28 w-full rounded-lg object-cover"
+                    />
                     <button
                       type="button"
-                      onClick={() => setForm({ ...form, foto: null })}
+                      onClick={quitarFotoArticulo}
                       className="absolute -right-1.5 -top-1.5 rounded-full bg-red-600 p-0.5 text-white"
                     >
                       <X className="h-4 w-4" />
@@ -632,10 +700,13 @@ export default function Articulos() {
                 {/* Datos QR */}
                 <div className="flex flex-col items-center justify-center border border-gray-100 p-4 rounded-xl bg-gray-50">
                   <img
-                    src={articuloFicha.foto || getQrUrl(articuloFicha.codigo)}
-                    alt={articuloFicha.foto ? 'Foto del artículo' : 'Código QR del artículo'}
-                    className="w-40 h-40 object-contain shadow-xs bg-white rounded-lg p-2"
+                    src={getArticuloImage(articuloFicha)}
+                    alt={articuloFicha.foto || articuloFicha.fotoId ? 'Foto del artículo' : 'Imagen del artículo'}
+                    className="w-40 h-40 object-cover shadow-xs bg-white rounded-lg p-2"
                   />
+                  {!hasArticuloImage(articuloFicha) && (
+                    <span className="mt-2 rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-bold uppercase text-gray-400">Foto pendiente</span>
+                  )}
                   <span className="font-mono text-sm font-bold text-gray-800 mt-2">{articuloFicha.codigo}</span>
                 </div>
 

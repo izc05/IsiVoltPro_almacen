@@ -72,11 +72,11 @@ export default function Ajustes() {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       try {
         const parsed = JSON.parse(event.target.result);
         if (confirm('Vas a reemplazar todos los datos locales con esta copia JSON. ¿Continuar?')) {
-          importarJson(parsed);
+          await importarJson(parsed);
         }
       } catch {
         alert('No se pudo leer el JSON seleccionado.');

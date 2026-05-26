@@ -310,8 +310,8 @@ export function AppProvider({ children }) {
     mostrarNotificacion('Base de datos restablecida con datos demo.', 'info');
   };
 
-  const handleExportarJson = () => {
-    storageService.exportJson();
+  const handleExportarJson = async () => {
+    await storageService.exportJson();
     storageService.addAudit({
       accion: 'exportar',
       entidad: 'backup-json',
@@ -324,8 +324,8 @@ export function AppProvider({ children }) {
     mostrarNotificacion('Copia JSON completa exportada.');
   };
 
-  const handleImportarJson = (backup) => {
-    storageService.importJson(backup);
+  const handleImportarJson = async (backup) => {
+    await storageService.importJson(backup);
     storageService.addAudit({
       accion: 'importar',
       entidad: 'backup-json',

@@ -1,4 +1,5 @@
 import { DEMO_ARTICULOS, DEMO_TECNICOS, DEMO_PROVEEDORES, DEMO_MOVIMIENTOS, DEMO_PEDIDOS } from '../data/demoData';
+import { imageStore } from './imageStore';
 
 export const ROLES = {
   admin: 'Administrador',
@@ -210,7 +211,7 @@ export const storageService = {
     return this.set('AUDITORIA', auditoria.slice(0, 500));
   },
 
-  exportJson() {
+  async exportJson() {
     const backup = {
       version: 2,
       generatedAt: new Date().toISOString(),
@@ -223,7 +224,8 @@ export const storageService = {
         ajustes: this.getAjustes(),
         usuarios: this.get('USUARIOS'),
         almacenes: this.get('ALMACENES'),
-        auditoria: this.get('AUDITORIA')
+        auditoria: this.get('AUDITORIA'),
+        images: await imageStore.all()
       }
     };
     const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
@@ -236,7 +238,7 @@ export const storageService = {
     return true;
   },
 
-  importJson(backup) {
+  async importJson(backup) {
     const data = backup?.data || backup;
     if (!data || !Array.isArray(data.articulos)) {
       throw new Error('La copia JSON no tiene el formato esperado.');
@@ -251,6 +253,7 @@ export const storageService = {
     localStorage.setItem(KEYS.USUARIOS, JSON.stringify(data.usuarios || DEMO_USUARIOS));
     localStorage.setItem(KEYS.ALMACENES, JSON.stringify(data.almacenes || DEFAULT_ALMACENES));
     localStorage.setItem(KEYS.AUDITORIA, JSON.stringify(data.auditoria || []));
+    await imageStore.importAll(data.images || []);
     this.migrate();
     return true;
   },

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 460">
+  <rect width="640" height="460" rx="34" fill="#f8fafc"/>
+  <circle cx="286" cy="244" r="112" fill="#111827"/>
+  <circle cx="286" cy="244" r="58" fill="#f8fafc"/>
+  <path d="M356 250c54-6 92 8 120 44 22 28 18 58-8 72-30 16-70-10-94-42-16-20-30-44-58-44z" fill="#111827"/>
+  <path d="M366 282c44 2 74 18 90 42" stroke="#f59e0b" stroke-width="12" stroke-linecap="round"/>
+  <text x="54" y="78" font-family="Arial" font-size="28" font-weight="800" fill="#111827">Cinta aislante</text>
+  <text x="54" y="112" font-family="Arial" font-size="16" font-weight="700" fill="#64748b">Consumibles</text>
+</svg>

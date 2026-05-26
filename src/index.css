@@ -1,0 +1,125 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Outfit', sans-serif;
+  --color-amber-primary: #f59e0b;
+  --color-amber-dark: #d97706;
+  --color-amber-light: #fef3c7;
+  --color-dark-bg: #111827;
+  --color-dark-card: #1f2937;
+  --color-dark-border: #374151;
+}
+
+:root {
+  font-family: 'Outfit', sans-serif;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  background-color: #f9fafb;
+  color: #111827;
+  -webkit-font-smoothing: antialiased;
+}
+
+.label-mini {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: #6b7280;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.field {
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  padding: 0.625rem 0.75rem;
+  color: #1f2937;
+  font-size: 0.875rem;
+  outline: none;
+}
+
+.field:focus {
+  border-color: #f59e0b;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Custom styling for print (A4 reports) */
+@media print {
+  body {
+    background: white;
+    color: black;
+    font-size: 12pt;
+  }
+  
+  .no-print {
+    display: none !important;
+  }
+  
+  .print-only {
+    display: block !important;
+  }
+  
+  .print-card {
+    border: 1px solid #e2e8f0;
+    box-shadow: none !important;
+    page-break-inside: avoid;
+  }
+  
+  @page {
+    size: A4;
+    margin: 1.5cm;
+  }
+}
+
+/* Custom animations and utilities */
+.glassmorphism {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.glassmorphism-dark {
+  background: rgba(31, 41, 55, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Page transitions wrapper */
+.page-container {
+  min-height: calc(100vh - 4rem);
+}
+
+/* Quick signature pad simulator styling */
+.signature-pad {
+  border: 2px dashed #cbd5e1;
+  background-color: #f8fafc;
+  border-radius: 0.5rem;
+  cursor: crosshair;
+}

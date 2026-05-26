@@ -1,425 +1,293 @@
 import { useApp } from '../context/AppContext';
-import { 
-  Package, 
-  AlertTriangle, 
-  ArrowDownLeft, 
-  ArrowUpRight, 
-  TrendingUp, 
-  QrCode, 
-  UserCheck,
+import {
+  AlertTriangle,
+  ArrowDownLeft,
+  ArrowUpRight,
+  ClipboardCheck,
+  History,
+  Package,
+  QrCode,
+  Search,
   ShoppingBag,
-  History
+  TrendingUp,
+  UserCheck,
+  Warehouse
 } from 'lucide-react';
+
+const sectorStyle = {
+  Electricidad: 'from-amber-500 to-orange-600',
+  Fontanería: 'from-sky-500 to-blue-600',
+  Mecánico: 'from-slate-500 to-gray-800',
+  Albañil: 'from-stone-500 to-orange-700',
+  Jardín: 'from-lime-500 to-emerald-600',
+  Calefactor: 'from-red-500 to-rose-700',
+  Clima: 'from-cyan-500 to-indigo-600'
+};
+
+const sectorOrden = ['Electricidad', 'Fontanería', 'Mecánico', 'Albañil', 'Jardín', 'Calefactor', 'Clima'];
+
 export default function Dashboard() {
-  const { 
-    articulos, 
-    almacenes,
+  const {
+    articulos,
     sectores,
-    movimientos, 
-    setActiveTab, 
+    movimientos,
+    setActiveTab,
     generarPedidoAutomatico,
     hasPermission
   } = useApp();
 
-  // 1. Cálculos de métricas
-  const totalArticulos = articulos.filter(a => a.activo).length;
-  const stockBajo = articulos.filter(a => a.activo && a.stockActual <= a.stockMinimo);
-  const unidadesTotales = articulos
-    .filter(a => a.activo)
-    .reduce((sum, art) => sum + (Number(art.stockActual) || 0), 0);
+  const activos = articulos.filter((art) => art.activo);
+  const totalArticulos = activos.length;
+  const stockBajo = activos.filter((art) => Number(art.stockActual) <= Number(art.stockMinimo));
+  const unidadesTotales = activos.reduce((sum, art) => sum + (Number(art.stockActual) || 0), 0);
 
-  // Filtrar movimientos de este mes
   const ahora = new Date();
   const primerDiaMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
-  const movMes = movimientos.filter(m => new Date(m.fecha) >= primerDiaMes);
-  
-  const entradasMes = movMes
-    .filter(m => m.tipo === 'entrada')
-    .reduce((sum, m) => sum + m.cantidad, 0);
+  const movMes = movimientos.filter((mov) => new Date(mov.fecha) >= primerDiaMes);
+  const entradasMes = movMes.filter((mov) => mov.tipo === 'entrada').reduce((sum, mov) => sum + Number(mov.cantidad || 0), 0);
+  const salidasMes = movMes.filter((mov) => mov.tipo === 'salida').reduce((sum, mov) => sum + Number(mov.cantidad || 0), 0);
 
-  const salidasMes = movMes
-    .filter(m => m.tipo === 'salida')
-    .reduce((sum, m) => sum + m.cantidad, 0);
-
-  const resumenAlmacenes = almacenes.map((almacen) => {
-    const articulosConStock = articulos.filter((art) => art.activo && (Number(art.stockPorAlmacen?.[almacen.id]) || 0) > 0);
-    const unidades = articulosConStock.reduce((sum, art) => sum + (Number(art.stockPorAlmacen?.[almacen.id]) || 0), 0);
-    const alertas = articulosConStock.filter((art) => (Number(art.stockPorAlmacen?.[almacen.id]) || 0) <= art.stockMinimo).length;
-
-    return {
-      ...almacen,
-      articulos: articulosConStock.length,
-      unidades,
-      alertas
-    };
-  });
-
-  const resumenSectores = (sectores || [])
+  const sectoresBase = Array.from(new Set([...sectorOrden, ...(sectores || [])]));
+  const resumenSectores = sectoresBase
     .map((sector) => {
-      const items = articulos.filter((art) => art.activo && art.categoria === sector);
+      const items = activos.filter((art) => art.categoria === sector);
       return {
         sector,
         articulos: items.length,
         unidades: items.reduce((sum, art) => sum + (Number(art.stockActual) || 0), 0),
-        alertas: items.filter((art) => art.stockActual <= art.stockMinimo).length
+        alertas: items.filter((art) => Number(art.stockActual) <= Number(art.stockMinimo)).length,
+        imagen: items.find((art) => art.foto)?.foto
       };
     })
     .filter((sector) => sector.articulos > 0)
-    .sort((a, b) => b.articulos - a.articulos);
-  const maxUnidadesSector = Math.max(...resumenSectores.map((sector) => sector.unidades), 1);
+    .sort((a, b) => sectorOrden.indexOf(a.sector) - sectorOrden.indexOf(b.sector));
 
-  // 2. Análisis de movimientos (Materiales más retirados y Técnicos con más salidas)
   const rankingMateriales = {};
   const rankingTecnicos = {};
-
-  movimientos.forEach(m => {
-    if (m.tipo === 'salida') {
-      const key = m.articuloId || m.codigo || m.articuloNombre;
-      const art = articulos.find((item) => item.id === m.articuloId || item.codigo === m.codigo);
-      rankingMateriales[key] = rankingMateriales[key] || {
-        nombre: m.articuloNombre,
-        codigo: m.codigo,
-        foto: art?.foto,
-        unidad: art?.unidad || 'uds',
-        total: 0
-      };
-      rankingMateriales[key].total += m.cantidad;
-      rankingTecnicos[m.origenDestino] = (rankingTecnicos[m.origenDestino] || 0) + m.cantidad;
-    }
+  movimientos.forEach((mov) => {
+    if (mov.tipo !== 'salida') return;
+    const key = mov.articuloId || mov.codigo || mov.articuloNombre;
+    const art = articulos.find((item) => item.id === mov.articuloId || item.codigo === mov.codigo);
+    rankingMateriales[key] = rankingMateriales[key] || {
+      nombre: mov.articuloNombre,
+      codigo: mov.codigo,
+      foto: art?.foto,
+      unidad: art?.unidad || 'uds',
+      total: 0
+    };
+    rankingMateriales[key].total += Number(mov.cantidad || 0);
+    rankingTecnicos[mov.origenDestino] = (rankingTecnicos[mov.origenDestino] || 0) + Number(mov.cantidad || 0);
   });
 
-  const materialesMasRetirados = Object.values(rankingMateriales)
-    .sort((a, b) => b.total - a.total)
-    .slice(0, 5);
-  const maxMaterialRetirado = Math.max(...materialesMasRetirados.map((item) => item.total), 1);
-
-  const tecnicosMasActivos = Object.entries(rankingTecnicos)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 3);
+  const materialesMasRetirados = Object.values(rankingMateriales).sort((a, b) => b.total - a.total).slice(0, 5);
+  const tecnicosMasActivos = Object.entries(rankingTecnicos).sort((a, b) => b[1] - a[1]).slice(0, 4);
+  const criticosPorSector = stockBajo.slice(0, 6);
 
   return (
-    <div className="space-y-8 animate-fade-in">
-      {/* Título de Cabecera */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-3xl font-extrabold tracking-tight text-gray-900">Panel Principal</h2>
-          <p className="text-gray-500 text-sm mt-1">Resumen del estado y actividad de IsiVoltPro Almacén.</p>
-        </div>
-        <div className="text-sm font-medium text-gray-500 bg-white px-4 py-2 rounded-xl shadow-xs border border-gray-100 self-start md:self-auto">
-          Fecha Local: {new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-        </div>
-      </div>
-
-      {/* METRICAS PRINCIPALES */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-6">
-        
-        {/* Total Artículos */}
-        <div className="bg-white p-5 rounded-2xl shadow-xs border border-gray-100 flex flex-col gap-3">
-          <div className="p-3 bg-amber-50 rounded-xl text-amber-600">
-            <Package className="h-6 w-6" />
-          </div>
+    <div className="space-y-7 animate-fade-in">
+      <section className="relative overflow-hidden rounded-3xl bg-gray-950 p-6 text-white shadow-xl lg:p-8">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_20%,rgba(245,158,11,0.35),transparent_26%),radial-gradient(circle_at_90%_15%,rgba(251,146,60,0.18),transparent_22%)]" />
+        <div className="relative grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
           <div>
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Artículos Totales</p>
-            <h3 className="text-2xl font-black text-gray-900 mt-1">{totalArticulos}</h3>
-          </div>
-        </div>
-
-        {/* Stock Bajo Mínimo */}
-        <div
-          onClick={() => setActiveTab('articulos')}
-          className={`p-5 rounded-2xl shadow-xs border flex flex-col gap-3 cursor-pointer transition-transform hover:scale-[1.02] ${
-            stockBajo.length > 0 
-              ? 'bg-red-50/50 border-red-100 text-red-900' 
-              : 'bg-white border-gray-100 text-gray-900'
-          }`}
-        >
-          <div className={`p-3 rounded-xl ${stockBajo.length > 0 ? 'bg-red-100 text-red-600' : 'bg-green-50 text-green-600'}`}>
-            <AlertTriangle className="h-6 w-6" />
-          </div>
-          <div>
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Stock Bajo Mínimo</p>
-            <h3 className={`text-2xl font-black mt-1 ${stockBajo.length > 0 ? 'text-red-700' : 'text-green-700'}`}>
-              {stockBajo.length}
-            </h3>
-          </div>
-        </div>
-
-        {/* Entradas del Mes */}
-        <div className="bg-white p-5 rounded-2xl shadow-xs border border-gray-100 flex flex-col gap-3">
-          <div className="p-3 bg-blue-50 rounded-xl text-blue-600">
-            <ArrowDownLeft className="h-6 w-6" />
-          </div>
-          <div>
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Entradas (Este Mes)</p>
-            <h3 className="text-2xl font-black text-gray-900 mt-1">+{entradasMes}</h3>
-          </div>
-        </div>
-
-        <div className="bg-white p-5 rounded-2xl shadow-xs border border-gray-100 flex flex-col gap-3">
-          <div className="p-3 bg-rose-50 rounded-xl text-rose-600">
-            <ArrowUpRight className="h-6 w-6" />
-          </div>
-          <div>
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Salidas (Este Mes)</p>
-            <h3 className="text-2xl font-black text-gray-900 mt-1">-{salidasMes}</h3>
-          </div>
-        </div>
-
-        <div className="bg-white p-5 rounded-2xl shadow-xs border border-gray-100 flex flex-col gap-3">
-          <div className="p-3 bg-emerald-50 rounded-xl text-emerald-600">
-            <Package className="h-6 w-6" />
-          </div>
-          <div>
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Unidades Totales</p>
-            <h3 className="text-2xl font-black text-gray-900 mt-1">{unidadesTotales}</h3>
-          </div>
-        </div>
-
-      </div>
-
-      <div className="bg-white p-6 rounded-2xl shadow-xs border border-gray-100">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-          <div>
-            <h3 className="text-lg font-bold text-gray-900">Stock por Almacén</h3>
-            <p className="text-xs text-gray-500 mt-0.5">Resumen rápido de unidades, referencias activas y alertas por ubicación.</p>
-          </div>
-          <button
-            onClick={() => setActiveTab('articulos')}
-            className="self-start sm:self-auto text-xs font-bold text-amber-600 hover:text-amber-700"
-          >
-            Ver catálogo
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-          {resumenAlmacenes.map((almacen) => (
-            <div key={almacen.id} className="rounded-xl border border-gray-100 bg-gray-50 p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-black text-gray-900">{almacen.nombre}</p>
-                  <p className="mt-1 text-xs font-semibold text-gray-400">{almacen.articulos} referencias con stock</p>
-                </div>
-                <span className={`rounded-full px-2 py-0.5 text-xs font-black ${
-                  almacen.alertas > 0 ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'
-                }`}>
-                  {almacen.alertas} alertas
-                </span>
-              </div>
-              <div className="mt-4 flex items-end justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Unidades</span>
-                <span className="text-2xl font-black text-gray-900">{almacen.unidades}</span>
-              </div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-amber-400/25 bg-amber-400/10 px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-amber-200">
+              <Warehouse className="h-4 w-4" />
+              Almacén principal · 7 sectores
             </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="bg-white p-6 rounded-2xl shadow-xs border border-gray-100">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-          <div>
-            <h3 className="text-lg font-bold text-gray-900">Sectores de Trabajo</h3>
-            <p className="text-xs text-gray-500 mt-0.5">Electricidad, fontanería, calefacción, albañilería, mecánica, jardinería y cualquier sector nuevo que añadas.</p>
-          </div>
-          <button
-            onClick={() => setActiveTab('articulos')}
-            className="self-start sm:self-auto text-xs font-bold text-amber-600 hover:text-amber-700"
-          >
-            Filtrar artículos
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-          {resumenSectores.map((item) => (
-            <div key={item.sector} className="rounded-xl border border-gray-100 bg-gray-50 p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-black text-gray-900">{item.sector}</p>
-                  <p className="mt-1 text-xs font-semibold text-gray-400">{item.articulos} referencias</p>
-                </div>
-                <span className={`rounded-full px-2 py-0.5 text-xs font-black ${
-                  item.alertas > 0 ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'
-                }`}>
-                  {item.alertas} alertas
-                </span>
-              </div>
-              <div className="mt-4 flex items-end justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Unidades</span>
-                <span className="text-2xl font-black text-gray-900">{item.unidades}</span>
-              </div>
-              <div className="mt-3 h-2 overflow-hidden rounded-full bg-white">
-                <div className="h-full rounded-full bg-amber-500" style={{ width: `${Math.max(8, (item.unidades / maxUnidadesSector) * 100)}%` }} />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ACCIONES RÁPIDAS */}
-      <div className="bg-white p-6 rounded-2xl shadow-xs border border-gray-100">
-        <h3 className="text-lg font-bold text-gray-900 mb-4">Acciones Rápidas</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          
-          <button 
-            onClick={() => setActiveTab('qr')}
-            className="flex flex-col items-center justify-center p-4 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-semibold shadow-xs transition-colors space-y-2 text-center"
-          >
-            <QrCode className="h-6 w-6" />
-            <span className="text-sm">QR rápido</span>
-          </button>
-
-          <button 
-            onClick={() => setActiveTab('movimientos')}
-            className="flex flex-col items-center justify-center p-4 bg-gray-900 hover:bg-gray-800 text-white rounded-xl font-semibold shadow-xs transition-colors space-y-2 text-center"
-          >
-            <ArrowDownLeft className="h-6 w-6 text-amber-500" />
-            <span className="text-sm">Nueva Entrada</span>
-          </button>
-
-          <button 
-            onClick={() => setActiveTab('movimientos')}
-            className="flex flex-col items-center justify-center p-4 bg-gray-900 hover:bg-gray-800 text-white rounded-xl font-semibold shadow-xs transition-colors space-y-2 text-center"
-          >
-            <ArrowUpRight className="h-6 w-6 text-amber-500" />
-            <span className="text-sm">Nueva Salida</span>
-          </button>
-
-          {hasPermission('pedidos') && (
-            <button
-              onClick={generarPedidoAutomatico}
-              className="flex flex-col items-center justify-center p-4 bg-white hover:bg-gray-50 text-gray-900 border border-gray-200 rounded-xl font-semibold shadow-xs transition-colors space-y-2 text-center"
-            >
-              <ShoppingBag className="h-6 w-6 text-amber-600" />
-              <span className="text-sm">Pedido Automático</span>
-            </button>
-          )}
-
-        </div>
-      </div>
-
-      {/* DETALLES DE INVENTARIO Y MOVIMIENTOS */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        
-        {/* ÚLTIMOS MOVIMIENTOS */}
-        <div className="bg-white p-6 rounded-2xl shadow-xs border border-gray-100 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-gray-900 flex items-center space-x-2">
-                <History className="h-5 w-5 text-gray-500" />
-                <span>Últimos Movimientos</span>
-              </h3>
-              <button 
-                onClick={() => setActiveTab('movimientos')}
-                className="text-xs font-semibold text-amber-600 hover:text-amber-700"
-              >
-                Ver todos
+            <h2 className="mt-5 text-3xl font-black tracking-tight md:text-5xl">IsiVoltPro Almacén</h2>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-gray-300">
+              Control de materiales por sectores: electricidad, fontanería, mecánico, albañil, jardín, calefactor y clima. Escanea el QR del artículo para registrar entradas, salidas o recuentos en segundos.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <button onClick={() => setActiveTab('qr')} className="inline-flex items-center gap-2 rounded-2xl bg-amber-500 px-5 py-3 text-sm font-black text-gray-950 shadow-lg shadow-amber-950/20 hover:bg-amber-400">
+                <QrCode className="h-5 w-5" />
+                Escanear artículo
+              </button>
+              <button onClick={() => setActiveTab('articulos')} className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/10 px-5 py-3 text-sm font-bold text-white hover:bg-white/15">
+                <Search className="h-5 w-5" />
+                Buscar material
               </button>
             </div>
-            
-            <div className="space-y-3">
-              {movimientos.slice(0, 5).map((mov) => (
-                <div key={mov.id} className="flex items-start justify-between p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors">
-                  <div className="flex items-start space-x-3">
-                    <span className={`p-1.5 rounded-lg mt-0.5 inline-block ${
-                      mov.tipo === 'entrada' 
-                        ? 'bg-blue-100 text-blue-700' 
-                        : mov.tipo === 'salida' 
-                        ? 'bg-rose-100 text-rose-700' 
-                        : 'bg-purple-100 text-purple-700'
-                    }`}>
-                      {mov.tipo === 'entrada' ? <ArrowDownLeft className="h-4 w-4" /> : <ArrowUpRight className="h-4 w-4" />}
-                    </span>
-                    <div>
-                      <h4 className="font-semibold text-sm text-gray-900 line-clamp-1">{mov.articuloNombre}</h4>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        {mov.origenDestino} • {new Date(mov.fecha).toLocaleDateString('es-ES', {hour: '2-digit', minute:'2-digit'})}
-                      </p>
-                    </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
+            <Metric title="Referencias" value={totalArticulos} icon={Package} />
+            <Metric title="Stock crítico" value={stockBajo.length} icon={AlertTriangle} danger />
+            <Metric title="Entradas mes" value={`+${entradasMes}`} icon={ArrowDownLeft} />
+            <Metric title="Salidas mes" value={`-${salidasMes}`} icon={ArrowUpRight} />
+          </div>
+        </div>
+      </section>
+
+      <section className="grid gap-4 md:grid-cols-3">
+        <ActionCard icon={QrCode} title="Escanear QR" text="Detecta la referencia y abre acciones rápidas." onClick={() => setActiveTab('qr')} primary />
+        <ActionCard icon={ArrowDownLeft} title="Registrar entrada" text="Recepción de material, proveedor y albarán." onClick={() => setActiveTab('movimientos')} />
+        <ActionCard icon={ArrowUpRight} title="Registrar salida" text="Retirada por técnico, OT, zona y firma." onClick={() => setActiveTab('movimientos')} />
+      </section>
+
+      <section className="rounded-3xl border border-gray-100 bg-white p-5 shadow-xs lg:p-6">
+        <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h3 className="text-xl font-black text-gray-900">Sectores del almacén</h3>
+            <p className="text-sm text-gray-500">Un único almacén principal organizado por familias de mantenimiento.</p>
+          </div>
+          <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-black text-gray-600">{unidadesTotales} unidades totales</span>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {resumenSectores.map((item) => (
+            <button key={item.sector} onClick={() => setActiveTab('articulos')} className="group overflow-hidden rounded-2xl border border-gray-100 bg-gray-50 text-left shadow-xs transition hover:-translate-y-0.5 hover:shadow-md">
+              <div className={`relative h-28 bg-gradient-to-br ${sectorStyle[item.sector] || 'from-gray-500 to-gray-900'}`}>
+                {item.imagen && <img src={item.imagen} alt={item.sector} className="absolute inset-0 h-full w-full object-cover opacity-35 mix-blend-screen" />}
+                <div className="absolute inset-0 bg-gradient-to-t from-gray-950/60 to-transparent" />
+                <div className="absolute bottom-3 left-4 right-4 flex items-end justify-between gap-3 text-white">
+                  <h4 className="text-lg font-black">{item.sector}</h4>
+                  <span className="rounded-full bg-white/15 px-2 py-1 text-xs font-black backdrop-blur">{item.alertas} alertas</span>
+                </div>
+              </div>
+              <div className="p-4">
+                <div className="flex items-end justify-between">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-gray-400">Referencias</p>
+                    <p className="text-2xl font-black text-gray-900">{item.articulos}</p>
                   </div>
                   <div className="text-right">
-                    <span className={`font-bold text-sm ${
-                      mov.tipo === 'entrada' ? 'text-blue-600' : mov.tipo === 'salida' ? 'text-rose-600' : 'text-purple-600'
-                    }`}>
-                      {mov.tipo === 'entrada' ? '+' : ''}{mov.cantidad}
-                    </span>
-                    <p className="text-[10px] text-gray-400 font-mono mt-0.5">{mov.codigo}</p>
+                    <p className="text-xs font-bold uppercase tracking-wider text-gray-400">Unidades</p>
+                    <p className="text-2xl font-black text-gray-900">{item.unidades}</p>
                   </div>
                 </div>
-              ))}
-              {movimientos.length === 0 && (
-                <p className="text-center text-sm text-gray-400 py-6">No hay movimientos registrados.</p>
-              )}
+              </div>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+        <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-xs lg:p-6">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <h3 className="text-lg font-black text-gray-900">Material crítico</h3>
+              <p className="text-xs text-gray-500">Artículos bajo mínimo para pedir o revisar.</p>
             </div>
+            {hasPermission('pedidos') && (
+              <button onClick={generarPedidoAutomatico} className="inline-flex items-center gap-1 rounded-xl bg-amber-500 px-3 py-2 text-xs font-black text-gray-950 hover:bg-amber-400">
+                <ShoppingBag className="h-4 w-4" /> Pedido
+              </button>
+            )}
+          </div>
+          <div className="space-y-3">
+            {criticosPorSector.map((art) => (
+              <div key={art.id} className="flex items-center gap-3 rounded-2xl border border-red-100 bg-red-50/40 p-3">
+                {art.foto ? <img src={art.foto} alt={art.nombre} className="h-12 w-12 rounded-xl object-cover" /> : <div className="h-12 w-12 rounded-xl bg-gray-100" />}
+                <div className="min-w-0 flex-1">
+                  <p className="line-clamp-1 text-sm font-black text-gray-900">{art.nombre}</p>
+                  <p className="text-xs font-semibold text-gray-500">{art.categoria} · {art.ubicacion} · {art.codigo}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-black text-red-700">{art.stockActual}</p>
+                  <p className="text-[10px] font-bold uppercase text-gray-400">mín. {art.stockMinimo}</p>
+                </div>
+              </div>
+            ))}
+            {criticosPorSector.length === 0 && <p className="rounded-2xl bg-emerald-50 p-4 text-sm font-bold text-emerald-700">No hay material bajo mínimos.</p>}
           </div>
         </div>
 
-        {/* RANKINGS DE USO Y CONSUMOS */}
-        <div className="grid grid-cols-1 gap-6">
-          
-          {/* Material más retirado */}
-          <div className="bg-white p-6 rounded-2xl shadow-xs border border-gray-100">
-            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center space-x-2">
-              <TrendingUp className="h-5 w-5 text-amber-500" />
-              <span>Materiales Más Retirados</span>
-            </h3>
-            <div className="space-y-3">
-              {materialesMasRetirados.map((item, index) => (
-                <div key={`${item.codigo}-${item.nombre}`} className="rounded-xl border border-gray-50 p-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex min-w-0 items-center space-x-3">
-                      <span className="w-5 text-sm font-bold text-gray-400">#{index + 1}</span>
-                      {item.foto ? (
-                        <img src={item.foto} alt={item.nombre} className="h-10 w-10 rounded-lg border border-gray-100 bg-gray-50 object-contain" />
-                      ) : (
-                        <span className="h-10 w-10 rounded-lg bg-gray-100" />
-                      )}
-                      <div className="min-w-0">
-                        <span className="line-clamp-1 text-sm font-bold text-gray-800">{item.nombre}</span>
-                        <p className="font-mono text-[10px] font-semibold text-gray-400">{item.codigo}</p>
-                      </div>
-                    </div>
-                    <span className="rounded-lg bg-gray-100 px-2 py-1 text-sm font-bold text-gray-900">
-                      {item.total} {item.unidad}
-                    </span>
-                  </div>
-                  <div className="mt-3 h-2 overflow-hidden rounded-full bg-gray-100">
-                    <div className="h-full rounded-full bg-rose-500" style={{ width: `${Math.max(8, (item.total / maxMaterialRetirado) * 100)}%` }} />
-                  </div>
-                </div>
-              ))}
-              {materialesMasRetirados.length === 0 && (
-                <p className="text-center text-sm text-gray-400 py-6">No hay registros de salidas.</p>
-              )}
-            </div>
+        <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-xs lg:p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="flex items-center gap-2 text-lg font-black text-gray-900"><History className="h-5 w-5 text-gray-500" /> Últimos movimientos</h3>
+            <button onClick={() => setActiveTab('movimientos')} className="text-xs font-black text-amber-600 hover:text-amber-700">Ver todos</button>
           </div>
-
-          {/* Técnicos más activos */}
-          <div className="bg-white p-6 rounded-2xl shadow-xs border border-gray-100">
-            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center space-x-2">
-              <UserCheck className="h-5 w-5 text-amber-500" />
-              <span>Técnicos con Más Retiradas</span>
-            </h3>
-            <div className="space-y-3">
-              {tecnicosMasActivos.map(([nombre, total], index) => (
-                <div key={nombre} className="flex items-center justify-between p-3 rounded-xl border border-gray-50">
-                  <div className="flex items-center space-x-3">
-                    <span className="font-bold text-sm text-gray-400 w-5">#{index + 1}</span>
-                    <span className="font-medium text-sm text-gray-800 line-clamp-1">{nombre}</span>
-                  </div>
-                  <span className="font-bold text-sm text-gray-900 bg-amber-50 text-amber-700 px-2 py-1 rounded-lg">
-                    {total} uds
+          <div className="space-y-3">
+            {movimientos.slice(0, 6).map((mov) => (
+              <div key={mov.id} className="flex items-center justify-between gap-3 rounded-2xl bg-gray-50 p-3">
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className={`rounded-xl p-2 ${mov.tipo === 'entrada' ? 'bg-blue-100 text-blue-700' : mov.tipo === 'salida' ? 'bg-rose-100 text-rose-700' : 'bg-purple-100 text-purple-700'}`}>
+                    {mov.tipo === 'entrada' ? <ArrowDownLeft className="h-4 w-4" /> : mov.tipo === 'salida' ? <ArrowUpRight className="h-4 w-4" /> : <ClipboardCheck className="h-4 w-4" />}
                   </span>
+                  <div className="min-w-0">
+                    <p className="line-clamp-1 text-sm font-black text-gray-900">{mov.articuloNombre}</p>
+                    <p className="text-xs text-gray-500">{mov.origenDestino} · {new Date(mov.fecha).toLocaleDateString('es-ES', { hour: '2-digit', minute: '2-digit' })}</p>
+                  </div>
                 </div>
-              ))}
-              {tecnicosMasActivos.length === 0 && (
-                <p className="text-center text-sm text-gray-400 py-6">No hay registros de salidas por técnico.</p>
-              )}
+                <div className="text-right">
+                  <p className={`text-sm font-black ${mov.tipo === 'entrada' ? 'text-blue-700' : mov.tipo === 'salida' ? 'text-rose-700' : 'text-purple-700'}`}>{mov.tipo === 'entrada' ? '+' : mov.tipo === 'salida' ? '-' : ''}{Math.abs(Number(mov.cantidad || 0))}</p>
+                  <p className="font-mono text-[10px] font-bold text-gray-400">{mov.codigo}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="grid gap-6 lg:grid-cols-2">
+        <Ranking title="Materiales más retirados" icon={TrendingUp} items={materialesMasRetirados} />
+        <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-xs lg:p-6">
+          <h3 className="mb-4 flex items-center gap-2 text-lg font-black text-gray-900"><UserCheck className="h-5 w-5 text-amber-500" /> Técnicos con más retiradas</h3>
+          <div className="space-y-3">
+            {tecnicosMasActivos.map(([nombre, total], index) => (
+              <div key={nombre} className="flex items-center justify-between rounded-2xl border border-gray-100 p-3">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-sm font-black text-gray-500">{index + 1}</span>
+                  <span className="text-sm font-bold text-gray-800">{nombre}</span>
+                </div>
+                <span className="rounded-xl bg-amber-50 px-3 py-1 text-sm font-black text-amber-700">{total} uds</span>
+              </div>
+            ))}
+            {tecnicosMasActivos.length === 0 && <p className="text-sm text-gray-400">No hay salidas registradas.</p>}
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function Metric({ title, value, icon: Icon, danger = false }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur">
+      <div className={`mb-3 inline-flex rounded-xl p-2 ${danger ? 'bg-red-500/20 text-red-200' : 'bg-amber-400/15 text-amber-200'}`}>
+        <Icon className="h-5 w-5" />
+      </div>
+      <p className="text-xs font-bold uppercase tracking-wider text-gray-400">{title}</p>
+      <p className="mt-1 text-2xl font-black text-white">{value}</p>
+    </div>
+  );
+}
+
+function ActionCard({ icon: Icon, title, text, onClick, primary = false }) {
+  return (
+    <button onClick={onClick} className={`rounded-3xl p-5 text-left shadow-xs transition hover:-translate-y-0.5 hover:shadow-md ${primary ? 'bg-amber-500 text-gray-950' : 'border border-gray-100 bg-white text-gray-900'}`}>
+      <Icon className={`h-7 w-7 ${primary ? 'text-gray-950' : 'text-amber-600'}`} />
+      <h3 className="mt-4 text-lg font-black">{title}</h3>
+      <p className={`mt-1 text-sm ${primary ? 'text-gray-900/70' : 'text-gray-500'}`}>{text}</p>
+    </button>
+  );
+}
+
+function Ranking({ title, icon: Icon, items }) {
+  const max = Math.max(...items.map((item) => item.total), 1);
+  return (
+    <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-xs lg:p-6">
+      <h3 className="mb-4 flex items-center gap-2 text-lg font-black text-gray-900"><Icon className="h-5 w-5 text-amber-500" /> {title}</h3>
+      <div className="space-y-3">
+        {items.map((item, index) => (
+          <div key={`${item.codigo}-${item.nombre}`} className="rounded-2xl border border-gray-100 p-3">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="text-sm font-black text-gray-400">#{index + 1}</span>
+                {item.foto ? <img src={item.foto} alt={item.nombre} className="h-11 w-11 rounded-xl object-cover" /> : <span className="h-11 w-11 rounded-xl bg-gray-100" />}
+                <div className="min-w-0">
+                  <p className="line-clamp-1 text-sm font-black text-gray-900">{item.nombre}</p>
+                  <p className="font-mono text-[10px] font-bold text-gray-400">{item.codigo}</p>
+                </div>
+              </div>
+              <span className="rounded-xl bg-gray-100 px-3 py-1 text-sm font-black text-gray-900">{item.total} {item.unidad}</span>
+            </div>
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-gray-100">
+              <div className="h-full rounded-full bg-rose-500" style={{ width: `${Math.max(8, (item.total / max) * 100)}%` }} />
             </div>
           </div>
-
-        </div>
-
+        ))}
+        {items.length === 0 && <p className="text-sm text-gray-400">No hay salidas registradas.</p>}
       </div>
-
     </div>
   );
 }

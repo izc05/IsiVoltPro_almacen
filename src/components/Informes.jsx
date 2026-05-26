@@ -228,8 +228,6 @@ function reporteGeneratedWrapper(reporte, printFn) {
                         ? val
                           ? <img src={val} alt={col.header} className="h-12 max-w-28 object-contain border border-gray-200 rounded bg-white" />
                           : '-'
-                        : col.format === 'currency' 
-                        ? `${Number(val).toFixed(2)}€`
                         : col.format === 'diff'
                         ? `${val > 0 ? '+' : ''}${val}`
                         : val
@@ -266,7 +264,7 @@ function reporteGeneratedWrapper(reporte, printFn) {
             <div key={idx} className="flex justify-between items-center text-xs">
               <span className="text-gray-500 font-semibold">{res.label}:</span>
               <span className="font-extrabold text-gray-900 text-sm">
-                {res.format === 'currency' ? `${Number(res.value).toFixed(2)}€` : res.value}
+                {res.value}
               </span>
             </div>
           ))}

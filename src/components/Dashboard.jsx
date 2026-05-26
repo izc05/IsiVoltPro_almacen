@@ -5,14 +5,11 @@ import {
   ArrowDownLeft, 
   ArrowUpRight, 
   TrendingUp, 
-  DollarSign, 
   QrCode, 
   UserCheck,
   ShoppingBag,
   History
 } from 'lucide-react';
-import { inventoryService } from '../services/inventoryService';
-
 export default function Dashboard() {
   const { 
     articulos, 
@@ -26,7 +23,9 @@ export default function Dashboard() {
   // 1. Cálculos de métricas
   const totalArticulos = articulos.filter(a => a.activo).length;
   const stockBajo = articulos.filter(a => a.activo && a.stockActual <= a.stockMinimo);
-  const valorAlmacen = inventoryService.calcularValorAlmacen();
+  const unidadesTotales = articulos
+    .filter(a => a.activo)
+    .reduce((sum, art) => sum + (Number(art.stockActual) || 0), 0);
 
   // Filtrar movimientos de este mes
   const ahora = new Date();
@@ -74,11 +73,6 @@ export default function Dashboard() {
   const tecnicosMasActivos = Object.entries(rankingTecnicos)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 3);
-
-  // Formateador de moneda
-  const formatEuros = (value) => {
-    return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(value);
-  };
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -138,7 +132,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Valor Estimado Almacén */}
         <div className="bg-white p-5 rounded-2xl shadow-xs border border-gray-100 flex flex-col gap-3">
           <div className="p-3 bg-rose-50 rounded-xl text-rose-600">
             <ArrowUpRight className="h-6 w-6" />
@@ -151,11 +144,11 @@ export default function Dashboard() {
 
         <div className="bg-white p-5 rounded-2xl shadow-xs border border-gray-100 flex flex-col gap-3">
           <div className="p-3 bg-emerald-50 rounded-xl text-emerald-600">
-            <DollarSign className="h-6 w-6" />
+            <Package className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Valor del Almacén</p>
-            <h3 className="text-2xl font-black text-gray-900 mt-1">{formatEuros(valorAlmacen)}</h3>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Unidades Totales</p>
+            <h3 className="text-2xl font-black text-gray-900 mt-1">{unidadesTotales}</h3>
           </div>
         </div>
 

@@ -4,7 +4,7 @@ Sistema premium de gestión de almacén, control de stock e inventario para PC y
 
 ## Características Principales
 
-1. **Dashboard Completo**: Visualiza métricas generales, alertas de stock bajo mínimo, valor total estimado de almacén e históricos de consumo.
+1. **Dashboard Completo**: Visualiza métricas generales, alertas de stock bajo mínimo, unidades por almacén e históricos de consumo.
 2. **Catálogo de Artículos**: Alta, edición y desactivación de artículos con 14 campos detallados de ficha. Generación e impresión directa de etiquetas QR.
 3. **Control de Entradas**: Registra la entrada de stock seleccionando proveedores, indicando albaranes y adjuntando una foto de comprobante.
 4. **Control de Salidas**: Registro de retiradas asignando materiales a técnicos y especificando la Orden de Trabajo (OT) con soporte para firma táctil.

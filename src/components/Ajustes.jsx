@@ -139,7 +139,6 @@ export default function Ajustes() {
               stockMinimo: Number(row['Stock Mínimo']) || 5,
               ubicacion: String(row['Ubicación'] || '').trim().toUpperCase(),
               proveedorPrincipal: row['Proveedor Principal'] || '',
-              precioEstimado: Number(row['Precio Estimado']) || 0,
               activo: true
             });
             agregados++;

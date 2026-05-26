@@ -48,7 +48,6 @@ export const inventoryService = {
         'alm-clima': 0
       },
       stockMinimo: Number(articulo.stockMinimo) || 0,
-      precioEstimado: Number(articulo.precioEstimado) || 0,
       activo: articulo.activo !== undefined ? articulo.activo : true,
       qr: articulo.codigo
     };
@@ -87,7 +86,6 @@ export const inventoryService = {
       ...anterior,
       ...dataActualizada,
       stockMinimo: dataActualizada.stockMinimo === undefined ? anterior.stockMinimo : Number(dataActualizada.stockMinimo) || 0,
-      precioEstimado: dataActualizada.precioEstimado === undefined ? anterior.precioEstimado : Number(dataActualizada.precioEstimado) || 0,
       // No modificamos stockActual aquí, debe pasar por entrada/salida/ajuste
     };
     modificado.stockPorAlmacen = anterior.stockPorAlmacen || { 'alm-principal': Number(anterior.stockActual) || 0 };
@@ -333,11 +331,10 @@ export const inventoryService = {
 
   crearPedido(pedido) {
     const pedidos = this.getPedidos();
-    const total = pedido.articulos.reduce((sum, item) => sum + (item.cantidad * item.precioEstimado), 0);
     const nuevo = {
       id: `ped-${Date.now()}`,
       fecha: new Date().toISOString().split('T')[0],
-      total,
+      total: 0,
       estado: 'Borrador',
       ...pedido
     };
@@ -355,10 +352,7 @@ export const inventoryService = {
     const anterior = pedidos[idx];
     const modificado = { ...anterior, ...data };
     
-    // Si hay artículos y cambian, recalculamos total
-    if (data.articulos) {
-      modificado.total = data.articulos.reduce((sum, item) => sum + (item.cantidad * item.precioEstimado), 0);
-    }
+    modificado.total = 0;
 
     // Si el estado cambia a 'Recibido', cargamos stock automáticamente
     if (data.estado === 'Recibido' && anterior.estado !== 'Recibido') {
@@ -403,8 +397,7 @@ export const inventoryService = {
           articuloId: art.id,
           codigo: art.codigo,
           nombre: art.nombre,
-          cantidad: cantidadPedir,
-          precioEstimado: art.precioEstimado || 0
+          cantidad: cantidadPedir
         };
       });
 
@@ -433,9 +426,9 @@ export const inventoryService = {
     return this.getArticulos().filter(a => a.activo && a.stockActual <= a.stockMinimo);
   },
 
-  calcularValorAlmacen() {
+  calcularUnidadesAlmacen() {
     return this.getArticulos()
       .filter(a => a.activo)
-      .reduce((sum, a) => sum + (a.stockActual * (a.precioEstimado || 0)), 0);
+      .reduce((sum, a) => sum + (Number(a.stockActual) || 0), 0);
   }
 };

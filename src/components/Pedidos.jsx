@@ -70,8 +70,7 @@ export default function Pedidos() {
         articuloId: art.id,
         codigo: art.codigo,
         nombre: art.nombre,
-        cantidad: Number(cantidadLinea),
-        precioEstimado: art.precioEstimado || 0
+        cantidad: Number(cantidadLinea)
       }
     ]);
 
@@ -117,8 +116,6 @@ export default function Pedidos() {
       }
     }
   };
-
-  const totalForm = lineas.reduce((sum, l) => sum + (l.cantidad * l.precioEstimado), 0);
 
   const getBadgeEstado = (estado) => {
     switch (estado) {
@@ -185,12 +182,6 @@ export default function Pedidos() {
                 <div className="flex items-center justify-between">
                   <span>Líneas solicitadas:</span>
                   <span className="font-bold text-gray-800">{ped.articulos.length} artículos</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span>Importe estimado:</span>
-                  <span className="font-extrabold text-gray-900 text-base">
-                    {ped.total.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
-                  </span>
                 </div>
               </div>
             </div>
@@ -344,11 +335,7 @@ export default function Pedidos() {
                 />
               </div>
 
-              <div className="pt-4 border-t border-gray-100 flex items-center justify-between">
-                <span className="text-sm font-bold text-gray-600">
-                  Total Pedido: <span className="text-base text-gray-900 font-extrabold">{totalForm.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</span>
-                </span>
-                
+              <div className="pt-4 border-t border-gray-100 flex items-center justify-end">
                 <div className="flex items-center space-x-2">
                   <button
                     type="button"
@@ -417,12 +404,6 @@ export default function Pedidos() {
                 </div>
               )}
 
-              <div className="flex items-center justify-between pt-3 border-t border-gray-100 text-sm">
-                <span className="text-gray-500 font-semibold">Total estimado:</span>
-                <span className="text-base text-gray-900 font-extrabold">
-                  {pedidoDetalle.total.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
-                </span>
-              </div>
             </div>
 
             {/* BOTONES ACCION EN DETALLE */}

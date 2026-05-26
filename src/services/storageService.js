@@ -113,8 +113,7 @@ export const storageService = {
         cifEmpresa: 'B-12345678',
         direccion: 'Polígono Industrial Las Palmeras, Nave 4',
         telefono: '900 100 200',
-        email: 'info@isivoltpro.com',
-        moneda: '€'
+        email: 'info@isivoltpro.com'
       };
       localStorage.setItem(KEYS.AJUSTES, JSON.stringify(defaultAjustes));
     }

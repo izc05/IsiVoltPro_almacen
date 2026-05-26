@@ -56,7 +56,6 @@ export default function Articulos() {
     stockMinimo: 5,
     ubicacion: '',
     proveedorPrincipal: '',
-    precioEstimado: 0,
     foto: null,
     fotoId: null,
     activo: true
@@ -119,7 +118,6 @@ export default function Articulos() {
       stockMinimo: 5,
       ubicacion: '',
       proveedorPrincipal: proveedores[0]?.nombre || '',
-      precioEstimado: 0,
       foto: null,
       fotoId: null,
       activo: true
@@ -334,7 +332,6 @@ export default function Articulos() {
               <th scope="col" className="px-6 py-4">Categoría</th>
               <th scope="col" className="px-6 py-4">Stock</th>
               <th scope="col" className="px-6 py-4">Ubicación</th>
-              <th scope="col" className="px-6 py-4">P. Unitario</th>
               <th scope="col" className="px-6 py-4">Estado</th>
               <th scope="col" className="px-6 py-4 text-right">Acciones</th>
             </tr>
@@ -375,7 +372,6 @@ export default function Articulos() {
                     </div>
                   </td>
                   <td className="px-6 py-4 font-mono">{art.ubicacion || 'Sin Ubicación'}</td>
-                  <td className="px-6 py-4">{art.precioEstimado ? `${art.precioEstimado.toFixed(2)}€` : '0.00€'}</td>
                   <td className="px-6 py-4">
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${
                       art.activo ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
@@ -406,7 +402,7 @@ export default function Articulos() {
             })}
             {articulosFiltrados.length === 0 && (
               <tr>
-                <td colSpan="9" className="px-6 py-12 text-center text-gray-400">No se encontraron artículos.</td>
+                <td colSpan="8" className="px-6 py-12 text-center text-gray-400">No se encontraron artículos.</td>
               </tr>
             )}
           </tbody>
@@ -439,10 +435,6 @@ export default function Articulos() {
                 <div className="flex items-center justify-between mt-3 text-sm">
                   <span className="text-gray-400 font-semibold">Ubicación:</span>
                   <span className="font-mono text-gray-800">{art.ubicacion || 'S/U'}</span>
-                </div>
-                <div className="flex items-center justify-between mt-1 text-sm">
-                  <span className="text-gray-400 font-semibold">Precio:</span>
-                  <span className="text-gray-800 font-bold">{art.precioEstimado ? `${art.precioEstimado.toFixed(2)}€` : '0.00€'}</span>
                 </div>
               </div>
 
@@ -623,18 +615,6 @@ export default function Articulos() {
                   />
                 </div>
 
-                {/* Precio Estimado */}
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Precio Estimado (€)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={form.precioEstimado}
-                    onChange={(e) => setForm({ ...form, precioEstimado: Number(e.target.value) })}
-                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-hidden focus:border-amber-500"
-                  />
-                </div>
-
                 {/* Proveedor Principal */}
                 <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Proveedor Principal</label>
@@ -773,10 +753,6 @@ export default function Articulos() {
                   <div>
                     <span className="text-gray-400 font-bold block">Ubicación</span>
                     <span className="text-gray-800 font-mono font-semibold">{articuloFicha.ubicacion || 'Sin Ubicación'}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-400 font-bold block">Precio Estimado</span>
-                    <span className="text-gray-800 font-bold">{articuloFicha.precioEstimado ? `${articuloFicha.precioEstimado.toFixed(2)}€` : '0.00€'}</span>
                   </div>
                   <div className="col-span-2">
                     <span className="text-gray-400 font-bold block">Proveedor Principal</span>

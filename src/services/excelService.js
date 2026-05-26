@@ -23,7 +23,6 @@ export const excelService = {
         'Stock Mínimo': a.stockMinimo,
         Ubicación: a.ubicacion || '',
         'Proveedor Principal': a.proveedorPrincipal || '',
-        'Precio Estimado': a.precioEstimado || 0,
         Activo: a.activo ? 'Sí' : 'No'
       })));
       XLSX.utils.book_append_sheet(wb, wsArticulos, 'Artículos');
@@ -74,8 +73,6 @@ export const excelService = {
           Código: art.codigo,
           Nombre: art.nombre,
           Cantidad: art.cantidad,
-          'Precio Unitario': art.precioEstimado,
-          Total: art.cantidad * art.precioEstimado,
           'Estado Pedido': p.estado,
           Observaciones: p.observaciones || ''
         }))
@@ -104,7 +101,7 @@ export const excelService = {
         data = [[
           'Código Interno', 'Nombre', 'Categoría', 'Marca', 'Modelo',
           'Descripción', 'Unidad', 'Stock Actual', 'Stock Mínimo',
-          'Ubicación', 'Proveedor Principal', 'Precio Estimado'
+          'Ubicación', 'Proveedor Principal'
         ]];
         filename = 'plantilla-articulos.xlsx';
       } else if (tipo === 'tecnicos') {

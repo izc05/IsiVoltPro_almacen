@@ -6,14 +6,11 @@ export const reportService = {
       categoria: a.categoria,
       ubicacion: a.ubicacion || 'N/A',
       stockActual: a.stockActual,
-      unidad: a.unidad,
-      precio: a.precioEstimado,
-      totalValor: a.stockActual * a.precioEstimado
+      unidad: a.unidad
     }));
 
     const totalArticulos = data.length;
     const stockTotal = data.reduce((sum, a) => sum + a.stockActual, 0);
-    const valorTotal = data.reduce((sum, a) => sum + a.totalValor, 0);
 
     return {
       titulo: 'Informe de Stock Actual del Almacén',
@@ -23,15 +20,12 @@ export const reportService = {
         { header: 'Categoría', key: 'categoria' },
         { header: 'Ubicación', key: 'ubicacion' },
         { header: 'Stock', key: 'stockActual', align: 'right' },
-        { header: 'Unidad', key: 'unidad' },
-        { header: 'P. Unitario', key: 'precio', align: 'right', format: 'currency' },
-        { header: 'Valor Est.', key: 'totalValor', align: 'right', format: 'currency' }
+        { header: 'Unidad', key: 'unidad' }
       ],
       filas: data,
       resumen: [
         { label: 'Total Artículos Diferentes', value: totalArticulos },
-        { label: 'Unidades Totales en Stock', value: stockTotal },
-        { label: 'Valor Estimado del Almacén', value: valorTotal, format: 'currency' }
+        { label: 'Unidades Totales en Stock', value: stockTotal }
       ]
     };
   },
@@ -197,12 +191,10 @@ export const reportService = {
       fecha: p.fecha,
       proveedor: p.proveedor,
       items: p.articulos.length,
-      estado: p.estado,
-      total: p.total
+      estado: p.estado
     }));
 
     const totalPedidos = pedidos.length;
-    const totalImporte = pedidos.reduce((sum, p) => sum + p.total, 0);
 
     return {
       titulo: 'Informe General de Pedidos a Proveedor',
@@ -211,13 +203,11 @@ export const reportService = {
         { header: 'Fecha', key: 'fecha' },
         { header: 'Proveedor', key: 'proveedor' },
         { header: 'Líneas de Artículos', key: 'items', align: 'right' },
-        { header: 'Estado', key: 'estado' },
-        { header: 'Total Pedido', key: 'total', align: 'right', format: 'currency' }
+        { header: 'Estado', key: 'estado' }
       ],
       filas: data,
       resumen: [
-        { label: 'Total Pedidos Registrados', value: totalPedidos },
-        { label: 'Importe Total Acumulado', value: totalImporte, format: 'currency' }
+        { label: 'Total Pedidos Registrados', value: totalPedidos }
       ]
     };
   },

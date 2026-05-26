@@ -13,7 +13,6 @@ export const DEMO_ARTICULOS = [
     stockMinimo: 100,
     ubicacion: "A-01-B2",
     proveedorPrincipal: "Sonepar España",
-    precioEstimado: 1.85,
     activo: true
   },
   {
@@ -30,7 +29,6 @@ export const DEMO_ARTICULOS = [
     stockMinimo: 20, // Bajo stock
     ubicacion: "B-03-A1",
     proveedorPrincipal: "Sonepar España",
-    precioEstimado: 12.40,
     activo: true
   },
   {
@@ -47,7 +45,6 @@ export const DEMO_ARTICULOS = [
     stockMinimo: 10, // Bajo stock
     ubicacion: "B-03-A2",
     proveedorPrincipal: "Saltoki",
-    precioEstimado: 38.50,
     activo: true
   },
   {
@@ -64,7 +61,6 @@ export const DEMO_ARTICULOS = [
     stockMinimo: 5,
     ubicacion: "C-01-C3",
     proveedorPrincipal: "Saltoki",
-    precioEstimado: 45.00,
     activo: true
   },
   {
@@ -81,7 +77,6 @@ export const DEMO_ARTICULOS = [
     stockMinimo: 50,
     ubicacion: "A-04-A1",
     proveedorPrincipal: "Rexel España",
-    precioEstimado: 0.95,
     activo: true
   },
   {
@@ -98,7 +93,6 @@ export const DEMO_ARTICULOS = [
     stockMinimo: 2,
     ubicacion: "D-02-B1",
     proveedorPrincipal: "Fluke Direct",
-    precioEstimado: 145.00,
     activo: true
   },
   {
@@ -115,7 +109,6 @@ export const DEMO_ARTICULOS = [
     stockMinimo: 100,
     ubicacion: "A-02-D1",
     proveedorPrincipal: "Saltoki",
-    precioEstimado: 0.28,
     activo: true
   },
   {
@@ -132,7 +125,6 @@ export const DEMO_ARTICULOS = [
     stockMinimo: 5, // Bajo stock
     ubicacion: "B-04-C1",
     proveedorPrincipal: "Rexel España",
-    precioEstimado: 26.30,
     activo: true
   },
   {
@@ -149,7 +141,6 @@ export const DEMO_ARTICULOS = [
     stockMinimo: 30,
     ubicacion: "E-01-A1",
     proveedorPrincipal: "Saltoki",
-    precioEstimado: 1.15,
     activo: true
   },
   {
@@ -166,7 +157,6 @@ export const DEMO_ARTICULOS = [
     stockMinimo: 6, // Bajo stock
     ubicacion: "B-03-B2",
     proveedorPrincipal: "Rexel España",
-    precioEstimado: 21.90,
     activo: true
   }
 ];
@@ -261,9 +251,9 @@ export const DEMO_PEDIDOS = [
     fecha: "2026-05-18",
     proveedor: "Sonepar España",
     articulos: [
-      { articuloId: "art-2", codigo: "IV-MAGN-20", nombre: "Magnetotérmico 2P 16A Curva C 6kA", cantidad: 10, precioEstimado: 12.40 }
+      { articuloId: "art-2", codigo: "IV-MAGN-20", nombre: "Magnetotérmico 2P 16A Curva C 6kA", cantidad: 10 }
     ],
-    total: 124.00,
+    total: 0,
     estado: "Recibido"
   },
   {
@@ -271,10 +261,10 @@ export const DEMO_PEDIDOS = [
     fecha: "2026-05-25",
     proveedor: "Saltoki",
     articulos: [
-      { articuloId: "art-3", codigo: "IV-DIFE-40", nombre: "Diferencial 2P 40A 30mA AC", cantidad: 5, precioEstimado: 38.50 },
-      { articuloId: "art-10", codigo: "IV-CONT-25", nombre: "Contactor AC3 3P 25A Bobina 230Vac", cantidad: 6, precioEstimado: 21.90 }
+      { articuloId: "art-3", codigo: "IV-DIFE-40", nombre: "Diferencial 2P 40A 30mA AC", cantidad: 5 },
+      { articuloId: "art-10", codigo: "IV-CONT-25", nombre: "Contactor AC3 3P 25A Bobina 230Vac", cantidad: 6 }
     ],
-    total: 323.90,
+    total: 0,
     estado: "Enviado"
   }
 ];

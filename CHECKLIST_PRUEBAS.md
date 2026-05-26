@@ -1,0 +1,23 @@
+# Checklist interno de pruebas
+
+- [ ] Login administrador: `admin` / `admin123`
+- [ ] Login encargado: `almacen` / `almacen123`
+- [ ] Login técnico: `tecnico` / `tecnico123`
+- [ ] Alta de artículo con foto y QR
+- [ ] Entrada de material con almacén, albarán y foto comprimida
+- [ ] Salida de material con almacén, OT, foto opcional y firma obligatoria
+- [ ] Devolución de material desde usuario técnico
+- [ ] Inventario físico por almacén
+- [ ] Traspaso entre almacenes
+- [ ] Pedido a proveedor y recepción de stock
+- [ ] Alta/edición de proveedor
+- [ ] Alta/edición de técnico
+- [ ] Exportar Excel
+- [ ] Importar Excel
+- [ ] Exportar copia completa JSON
+- [ ] Importar copia completa JSON con confirmación
+- [ ] Reset demo escribiendo `RESET DEMO`
+- [ ] Informe de salidas con firma visible
+- [ ] Auditoría: comprobar cambios antes/después y usuario
+- [ ] Responsive móvil
+- [ ] Responsive PC

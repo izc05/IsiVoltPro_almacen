@@ -26,6 +26,7 @@ export default function Layout({ children }) {
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'qr', label: 'QR rápido', icon: QrCode },
     { id: 'articulos', label: 'Artículos', icon: Package, badge: stockBajoCount > 0 ? stockBajoCount : null },
     { id: 'movimientos', label: 'Movimientos', icon: ClipboardList },
     { id: 'personas', label: 'Técnicos & Prov.', icon: Users },
@@ -35,6 +36,7 @@ export default function Layout({ children }) {
     { id: 'auditoria', label: 'Historial', icon: ShieldCheck },
     { id: 'ajustes', label: 'Ajustes', icon: Settings },
   ].filter((item) => hasPermission(item.id));
+  const mobileMenuItems = menuItems.filter((item) => item.id !== 'qr');
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row relative">
@@ -176,7 +178,7 @@ export default function Layout({ children }) {
 
       {/* MENÚ INFERIOR TÁCTIL EN MÓVIL (no-print) */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 bg-gray-900 border-t border-gray-800 text-white h-16 flex items-center justify-around z-30 shadow-lg px-2 no-print">
-        {menuItems.slice(0, 5).map((item) => {
+        {mobileMenuItems.slice(0, 5).map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
           return (
@@ -201,14 +203,14 @@ export default function Layout({ children }) {
         })}
         {/* Botón Central Destacado de QR / Auditoría en Móvil */}
         <button
-          onClick={() => setActiveTab('inventario')}
+          onClick={() => setActiveTab('qr')}
           className={`flex flex-col items-center justify-center w-14 h-14 -translate-y-4 rounded-full border-4 border-gray-900 shadow-xl relative transition-transform ${
-            activeTab === 'inventario' ? 'bg-amber-600 text-white scale-105' : 'bg-amber-500 text-gray-950 hover:bg-amber-600'
+            activeTab === 'qr' ? 'bg-amber-600 text-white scale-105' : 'bg-amber-500 text-gray-950 hover:bg-amber-600'
           }`}
         >
           <QrCode className="h-6 w-6" />
         </button>
-        {menuItems.slice(5).map((item) => {
+        {mobileMenuItems.slice(5).map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
           return (

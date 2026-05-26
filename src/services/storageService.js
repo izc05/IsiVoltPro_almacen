@@ -9,6 +9,7 @@ export const ROLES = {
 
 export const PERMISSIONS = {
   dashboard: ['admin', 'encargado', 'tecnico'],
+  qr: ['admin', 'encargado', 'tecnico'],
   articulos: ['admin', 'encargado', 'tecnico'],
   movimientos: ['admin', 'encargado', 'tecnico'],
   personas: ['admin', 'encargado'],

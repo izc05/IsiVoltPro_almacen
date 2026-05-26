@@ -1,3 +1,4 @@
+import { Suspense, lazy } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import Layout from './components/Layout';
 import Login from './components/Login';
@@ -10,6 +11,8 @@ import Inventario from './components/Inventario';
 import Informes from './components/Informes';
 import Auditoria from './components/Auditoria';
 import Ajustes from './components/Ajustes';
+
+const QRScanner = lazy(() => import('./components/QRScanner'));
 
 function AppContent() {
   const { activeTab, currentUser, hasPermission } = useApp();
@@ -26,6 +29,12 @@ function AppContent() {
     switch (activeTab) {
       case 'dashboard':
         return <Dashboard />;
+      case 'qr':
+        return (
+          <Suspense fallback={<div className="rounded-2xl border border-gray-100 bg-white p-8 text-sm font-bold text-gray-500 shadow-xs">Cargando escáner QR...</div>}>
+            <QRScanner />
+          </Suspense>
+        );
       case 'articulos':
         return <Articulos />;
       case 'movimientos':

@@ -16,6 +16,7 @@ import { inventoryService } from '../services/inventoryService';
 export default function Dashboard() {
   const { 
     articulos, 
+    almacenes,
     movimientos, 
     setActiveTab, 
     generarPedidoAutomatico,
@@ -39,6 +40,19 @@ export default function Dashboard() {
   const salidasMes = movMes
     .filter(m => m.tipo === 'salida')
     .reduce((sum, m) => sum + m.cantidad, 0);
+
+  const resumenAlmacenes = almacenes.map((almacen) => {
+    const articulosConStock = articulos.filter((art) => art.activo && (Number(art.stockPorAlmacen?.[almacen.id]) || 0) > 0);
+    const unidades = articulosConStock.reduce((sum, art) => sum + (Number(art.stockPorAlmacen?.[almacen.id]) || 0), 0);
+    const alertas = articulosConStock.filter((art) => (Number(art.stockPorAlmacen?.[almacen.id]) || 0) <= art.stockMinimo).length;
+
+    return {
+      ...almacen,
+      articulos: articulosConStock.length,
+      unidades,
+      alertas
+    };
+  });
 
   // 2. Análisis de movimientos (Materiales más retirados y Técnicos con más salidas)
   const rankingMateriales = {};
@@ -80,10 +94,10 @@ export default function Dashboard() {
       </div>
 
       {/* METRICAS PRINCIPALES */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-6">
         
         {/* Total Artículos */}
-        <div className="bg-white p-6 rounded-2xl shadow-xs border border-gray-100 flex items-center space-x-4">
+        <div className="bg-white p-5 rounded-2xl shadow-xs border border-gray-100 flex flex-col gap-3">
           <div className="p-3 bg-amber-50 rounded-xl text-amber-600">
             <Package className="h-6 w-6" />
           </div>
@@ -94,9 +108,9 @@ export default function Dashboard() {
         </div>
 
         {/* Stock Bajo Mínimo */}
-        <div 
+        <div
           onClick={() => setActiveTab('articulos')}
-          className={`p-6 rounded-2xl shadow-xs border flex items-center space-x-4 cursor-pointer transition-transform hover:scale-[1.02] ${
+          className={`p-5 rounded-2xl shadow-xs border flex flex-col gap-3 cursor-pointer transition-transform hover:scale-[1.02] ${
             stockBajo.length > 0 
               ? 'bg-red-50/50 border-red-100 text-red-900' 
               : 'bg-white border-gray-100 text-gray-900'
@@ -114,7 +128,7 @@ export default function Dashboard() {
         </div>
 
         {/* Entradas del Mes */}
-        <div className="bg-white p-6 rounded-2xl shadow-xs border border-gray-100 flex items-center space-x-4">
+        <div className="bg-white p-5 rounded-2xl shadow-xs border border-gray-100 flex flex-col gap-3">
           <div className="p-3 bg-blue-50 rounded-xl text-blue-600">
             <ArrowDownLeft className="h-6 w-6" />
           </div>
@@ -125,7 +139,17 @@ export default function Dashboard() {
         </div>
 
         {/* Valor Estimado Almacén */}
-        <div className="bg-white p-6 rounded-2xl shadow-xs border border-gray-100 flex items-center space-x-4">
+        <div className="bg-white p-5 rounded-2xl shadow-xs border border-gray-100 flex flex-col gap-3">
+          <div className="p-3 bg-rose-50 rounded-xl text-rose-600">
+            <ArrowUpRight className="h-6 w-6" />
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Salidas (Este Mes)</p>
+            <h3 className="text-2xl font-black text-gray-900 mt-1">-{salidasMes}</h3>
+          </div>
+        </div>
+
+        <div className="bg-white p-5 rounded-2xl shadow-xs border border-gray-100 flex flex-col gap-3">
           <div className="p-3 bg-emerald-50 rounded-xl text-emerald-600">
             <DollarSign className="h-6 w-6" />
           </div>
@@ -135,6 +159,43 @@ export default function Dashboard() {
           </div>
         </div>
 
+      </div>
+
+      <div className="bg-white p-6 rounded-2xl shadow-xs border border-gray-100">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+          <div>
+            <h3 className="text-lg font-bold text-gray-900">Stock por Almacén</h3>
+            <p className="text-xs text-gray-500 mt-0.5">Resumen rápido de unidades, referencias activas y alertas por ubicación.</p>
+          </div>
+          <button
+            onClick={() => setActiveTab('articulos')}
+            className="self-start sm:self-auto text-xs font-bold text-amber-600 hover:text-amber-700"
+          >
+            Ver catálogo
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          {resumenAlmacenes.map((almacen) => (
+            <div key={almacen.id} className="rounded-xl border border-gray-100 bg-gray-50 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="font-black text-gray-900">{almacen.nombre}</p>
+                  <p className="mt-1 text-xs font-semibold text-gray-400">{almacen.articulos} referencias con stock</p>
+                </div>
+                <span className={`rounded-full px-2 py-0.5 text-xs font-black ${
+                  almacen.alertas > 0 ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'
+                }`}>
+                  {almacen.alertas} alertas
+                </span>
+              </div>
+              <div className="mt-4 flex items-end justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Unidades</span>
+                <span className="text-2xl font-black text-gray-900">{almacen.unidades}</span>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* ACCIONES RÁPIDAS */}

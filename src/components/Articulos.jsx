@@ -28,6 +28,7 @@ export default function Articulos() {
   const [busqueda, setBusqueda] = useState('');
   const [categoriaFiltro, setCategoriaFiltro] = useState('');
   const [proveedorFiltro, setProveedorFiltro] = useState('');
+  const [almacenFiltro, setAlmacenFiltro] = useState('');
   const [mostrarInactivos, setMostrarInactivos] = useState(false);
 
   // Modales
@@ -99,9 +100,10 @@ export default function Articulos() {
       
     const cumpleCategoria = categoriaFiltro === '' || art.categoria === categoriaFiltro;
     const cumpleProveedor = proveedorFiltro === '' || art.proveedorPrincipal === proveedorFiltro;
+    const cumpleAlmacen = almacenFiltro === '' || (Number(art.stockPorAlmacen?.[almacenFiltro]) || 0) > 0;
     const cumpleActivo = mostrarInactivos ? true : art.activo;
 
-    return cumpleBusqueda && cumpleCategoria && cumpleProveedor && cumpleActivo;
+    return cumpleBusqueda && cumpleCategoria && cumpleProveedor && cumpleAlmacen && cumpleActivo;
   });
 
   const abrirCrear = () => {
@@ -200,6 +202,13 @@ export default function Articulos() {
 
   const hasArticuloImage = (art) => Boolean(imagenes[art.id] || art.foto || art.fotoId);
 
+  const getStockVisible = (art) => {
+    if (!almacenFiltro) return Number(art.stockActual) || 0;
+    return Number(art.stockPorAlmacen?.[almacenFiltro]) || 0;
+  };
+
+  const getAlmacenNombre = () => almacenes.find((almacen) => almacen.id === almacenFiltro)?.nombre || 'Todos los almacenes';
+
   // Enlace del QR
   const getQrUrl = (codigo) => {
     return `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(codigo)}`;
@@ -227,7 +236,7 @@ export default function Articulos() {
       </div>
 
       {/* FILTROS DE BÚSQUEDA */}
-      <div className="bg-white p-6 rounded-2xl shadow-xs border border-gray-100 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="bg-white p-6 rounded-2xl shadow-xs border border-gray-100 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
         {/* Buscador */}
         <div className="relative">
           <Search className="absolute left-3 top-3.5 h-4 w-4 text-gray-400" />
@@ -268,6 +277,20 @@ export default function Articulos() {
           </select>
         </div>
 
+        {/* Almacén */}
+        <div>
+          <select
+            value={almacenFiltro}
+            onChange={(e) => setAlmacenFiltro(e.target.value)}
+            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-hidden focus:border-amber-500"
+          >
+            <option value="">Todos los Almacenes</option>
+            {almacenes.map(almacen => (
+              <option key={almacen.id} value={almacen.id}>{almacen.nombre}</option>
+            ))}
+          </select>
+        </div>
+
         {/* Mostrar Inactivos */}
         <div className="flex items-center justify-between sm:justify-end space-x-3 px-1">
           <label className="text-sm font-semibold text-gray-500" htmlFor="verInactivos">
@@ -280,6 +303,23 @@ export default function Articulos() {
             onChange={(e) => setMostrarInactivos(e.target.checked)}
             className="h-5 w-5 rounded-sm border-gray-300 text-amber-600 focus:ring-amber-500"
           />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-xs">
+          <p className="text-xs font-black uppercase tracking-wider text-gray-400">Vista de almacén</p>
+          <p className="mt-1 text-sm font-bold text-gray-900">{getAlmacenNombre()}</p>
+        </div>
+        <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-xs">
+          <p className="text-xs font-black uppercase tracking-wider text-gray-400">Artículos visibles</p>
+          <p className="mt-1 text-2xl font-black text-gray-900">{articulosFiltrados.length}</p>
+        </div>
+        <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-xs">
+          <p className="text-xs font-black uppercase tracking-wider text-gray-400">Stock en vista</p>
+          <p className="mt-1 text-2xl font-black text-amber-600">
+            {articulosFiltrados.reduce((sum, art) => sum + getStockVisible(art), 0)}
+          </p>
         </div>
       </div>
 
@@ -301,7 +341,8 @@ export default function Articulos() {
           </thead>
           <tbody className="divide-y divide-gray-100 border-t border-gray-100 font-medium">
             {articulosFiltrados.map((art) => {
-              const esBajo = art.stockActual <= art.stockMinimo;
+              const stockVisible = getStockVisible(art);
+              const esBajo = stockVisible <= art.stockMinimo;
               return (
                 <tr key={art.id} className="hover:bg-gray-50/70 transition-colors">
                   <td className="px-6 py-4">
@@ -323,7 +364,7 @@ export default function Articulos() {
                   <td className="px-6 py-4">
                     <div className="flex items-center space-x-2">
                       <span className={`text-base font-bold ${esBajo ? 'text-red-600' : 'text-gray-900'}`}>
-                        {art.stockActual}
+                        {stockVisible}
                       </span>
                       <span className="text-xs text-gray-400">{art.unidad}</span>
                       {esBajo && (
@@ -375,7 +416,8 @@ export default function Articulos() {
       {/* VISTA DE TARJETAS (MÓVIL) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:hidden gap-4">
         {articulosFiltrados.map((art) => {
-          const esBajo = art.stockActual <= art.stockMinimo;
+          const stockVisible = getStockVisible(art);
+          const esBajo = stockVisible <= art.stockMinimo;
           return (
             <div key={art.id} className="bg-white p-5 rounded-2xl shadow-xs border border-gray-100 flex flex-col justify-between space-y-4">
               <img
@@ -407,7 +449,7 @@ export default function Articulos() {
               <div className="flex items-center justify-between pt-3 border-t border-gray-100">
                 <div className="flex items-center space-x-2">
                   <span className={`text-xl font-extrabold ${esBajo ? 'text-red-600' : 'text-gray-900'}`}>
-                    {art.stockActual}
+                    {stockVisible}
                   </span>
                   <span className="text-xs text-gray-500 font-semibold">{art.unidad}</span>
                   {esBajo && (

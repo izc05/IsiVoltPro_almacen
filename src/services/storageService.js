@@ -1,4 +1,4 @@
-import { DEMO_ARTICULOS, DEMO_TECNICOS, DEMO_PROVEEDORES, DEMO_MOVIMIENTOS, DEMO_PEDIDOS } from '../data/demoData';
+import { DEMO_ARTICLE_IMAGES, DEMO_ARTICULOS, DEMO_TECNICOS, DEMO_PROVEEDORES, DEMO_MOVIMIENTOS, DEMO_PEDIDOS } from '../data/demoData';
 import { imageStore } from './imageStore';
 
 export const ROLES = {
@@ -91,9 +91,13 @@ const normalizeArticulo = (articulo) => {
     'alm-clima': 0
   };
   const stockActual = Object.values(stockPorAlmacen).reduce((sum, value) => sum + (Number(value) || 0), 0);
+  const foto = articulo.foto || articulo.fotoId
+    ? articulo.foto
+    : DEMO_ARTICLE_IMAGES[articulo.codigo] || null;
 
   return {
     ...articulo,
+    foto,
     stockPorAlmacen,
     stockActual
   };
@@ -148,7 +152,7 @@ export const storageService = {
 
   migrate() {
     const articulos = JSON.parse(localStorage.getItem(KEYS.ARTICULOS) || '[]');
-    if (articulos.some((art) => !art.stockPorAlmacen)) {
+    if (articulos.some((art) => !art.stockPorAlmacen || (!art.foto && !art.fotoId && DEMO_ARTICLE_IMAGES[art.codigo]))) {
       localStorage.setItem(KEYS.ARTICULOS, JSON.stringify(articulos.map(normalizeArticulo)));
     }
 

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 460">
+  <rect width="640" height="460" rx="34" fill="#f8fafc"/>
+  <path d="M138 264c42-86 118-124 204-88 94 40 104 144 16 184-72 34-154-4-150-76" fill="none" stroke="#111827" stroke-width="38" stroke-linecap="round"/>
+  <path d="M138 264c42-86 118-124 204-88 94 40 104 144 16 184-72 34-154-4-150-76" fill="none" stroke="#94a3b8" stroke-width="20" stroke-linecap="round" stroke-dasharray="20 18"/>
+  <text x="54" y="78" font-family="Arial" font-size="28" font-weight="800" fill="#111827">Tubo corrugado</text>
+  <text x="54" y="112" font-family="Arial" font-size="16" font-weight="700" fill="#64748b">Albanileria</text>
+</svg>

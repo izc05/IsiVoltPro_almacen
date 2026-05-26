@@ -1,3 +1,16 @@
+export const DEMO_ARTICLE_IMAGES = {
+  "IV-CABLE-01": "/demo-articles/cable-3g25.svg",
+  "IV-MAGN-20": "/demo-articles/magnetotermico.svg",
+  "IV-DIFE-40": "/demo-articles/diferencial.svg",
+  "IV-FOCO-50": "/demo-articles/foco-led.svg",
+  "IV-CANAL-02": "/demo-articles/canaleta.svg",
+  "IV-PINZA-01": "/demo-articles/pinza-amperimetrica.svg",
+  "IV-TUBO-16": "/demo-articles/tubo-corrugado.svg",
+  "IV-PULS-01": "/demo-articles/pulsador-emergencia.svg",
+  "IV-CINTA-NE": "/demo-articles/cinta-aislante.svg",
+  "IV-CONT-25": "/demo-articles/contactor.svg"
+};
+
 export const DEMO_ARTICULOS = [
   {
     id: "art-1",
@@ -13,6 +26,7 @@ export const DEMO_ARTICULOS = [
     stockMinimo: 100,
     ubicacion: "A-01-B2",
     proveedorPrincipal: "Sonepar España",
+    foto: DEMO_ARTICLE_IMAGES["IV-CABLE-01"],
     activo: true
   },
   {
@@ -29,6 +43,7 @@ export const DEMO_ARTICULOS = [
     stockMinimo: 20, // Bajo stock
     ubicacion: "B-03-A1",
     proveedorPrincipal: "Sonepar España",
+    foto: DEMO_ARTICLE_IMAGES["IV-MAGN-20"],
     activo: true
   },
   {
@@ -45,6 +60,7 @@ export const DEMO_ARTICULOS = [
     stockMinimo: 10, // Bajo stock
     ubicacion: "B-03-A2",
     proveedorPrincipal: "Saltoki",
+    foto: DEMO_ARTICLE_IMAGES["IV-DIFE-40"],
     activo: true
   },
   {
@@ -61,6 +77,7 @@ export const DEMO_ARTICULOS = [
     stockMinimo: 5,
     ubicacion: "C-01-C3",
     proveedorPrincipal: "Saltoki",
+    foto: DEMO_ARTICLE_IMAGES["IV-FOCO-50"],
     activo: true
   },
   {
@@ -77,6 +94,7 @@ export const DEMO_ARTICULOS = [
     stockMinimo: 50,
     ubicacion: "A-04-A1",
     proveedorPrincipal: "Rexel España",
+    foto: DEMO_ARTICLE_IMAGES["IV-CANAL-02"],
     activo: true
   },
   {
@@ -93,6 +111,7 @@ export const DEMO_ARTICULOS = [
     stockMinimo: 2,
     ubicacion: "D-02-B1",
     proveedorPrincipal: "Fluke Direct",
+    foto: DEMO_ARTICLE_IMAGES["IV-PINZA-01"],
     activo: true
   },
   {
@@ -109,6 +128,7 @@ export const DEMO_ARTICULOS = [
     stockMinimo: 100,
     ubicacion: "A-02-D1",
     proveedorPrincipal: "Saltoki",
+    foto: DEMO_ARTICLE_IMAGES["IV-TUBO-16"],
     activo: true
   },
   {
@@ -125,6 +145,7 @@ export const DEMO_ARTICULOS = [
     stockMinimo: 5, // Bajo stock
     ubicacion: "B-04-C1",
     proveedorPrincipal: "Rexel España",
+    foto: DEMO_ARTICLE_IMAGES["IV-PULS-01"],
     activo: true
   },
   {
@@ -141,6 +162,7 @@ export const DEMO_ARTICULOS = [
     stockMinimo: 30,
     ubicacion: "E-01-A1",
     proveedorPrincipal: "Saltoki",
+    foto: DEMO_ARTICLE_IMAGES["IV-CINTA-NE"],
     activo: true
   },
   {
@@ -157,6 +179,7 @@ export const DEMO_ARTICULOS = [
     stockMinimo: 6, // Bajo stock
     ubicacion: "B-03-B2",
     proveedorPrincipal: "Rexel España",
+    foto: DEMO_ARTICLE_IMAGES["IV-CONT-25"],
     activo: true
   }
 ];

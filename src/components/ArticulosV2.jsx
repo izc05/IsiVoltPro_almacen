@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { AlertTriangle, Camera, Edit, MapPin, Package, Plus, QrCode, Save, Search, Sparkles, X } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { AlertTriangle, Camera, Edit, MapPin, Plus, Save, Search, Sparkles, X } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { imageService } from '../services/imageService';
 import { imageStore } from '../services/imageStore';
@@ -49,15 +49,29 @@ function wordCode(nombre = '') {
 }
 
 export default function ArticulosV2() {
-  const { articulos, proveedores, sectores, ubicaciones, crearArticulo, editarArticulo } = useApp();
+  const {
+    articulos,
+    proveedores,
+    sectores,
+    ubicaciones,
+    crearArticulo,
+    editarArticulo,
+    catalogoFiltroSector,
+    setCatalogoFiltroSector
+  } = useApp();
+
   const [busqueda, setBusqueda] = useState('');
-  const [sectorFiltro, setSectorFiltro] = useState('');
+  const [sectorFiltro, setSectorFiltro] = useState(catalogoFiltroSector || '');
   const [modal, setModal] = useState(false);
   const [editando, setEditando] = useState(null);
   const [form, setForm] = useState({ ...initialForm });
   const [error, setError] = useState('');
 
   const sectoresBase = Array.from(new Set([...(sectores || []), 'Electricidad', 'Fontanería', 'Mecánico', 'Albañil', 'Jardín', 'Calefactor', 'Clima']));
+
+  useEffect(() => {
+    setSectorFiltro(catalogoFiltroSector || '');
+  }, [catalogoFiltroSector]);
 
   const codigoSugerido = useMemo(() => generarCodigo(form.categoria, form.nombre, articulos), [form.categoria, form.nombre, articulos]);
   const ubicacionesSugeridas = useMemo(() => locationService.suggestLocations(form.categoria, articulos), [form.categoria, articulos]);
@@ -82,9 +96,22 @@ export default function ArticulosV2() {
     return candidate;
   }
 
+  const cambiarSectorFiltro = (value) => {
+    setSectorFiltro(value);
+    setCatalogoFiltroSector?.(value);
+  };
+
+  const limpiarFiltroSector = () => {
+    cambiarSectorFiltro('');
+  };
+
   const abrirNuevo = () => {
     setEditando(null);
-    setForm({ ...initialForm, proveedorPrincipal: proveedores[0]?.nombre || '' });
+    setForm({
+      ...initialForm,
+      categoria: sectorFiltro || catalogoFiltroSector || 'Electricidad',
+      proveedorPrincipal: proveedores[0]?.nombre || ''
+    });
     setError('');
     setModal(true);
   };
@@ -97,7 +124,6 @@ export default function ArticulosV2() {
   };
 
   const setField = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
-
   const aplicarCodigo = () => setField('codigo', codigoSugerido);
 
   const handleFoto = async (event) => {
@@ -155,23 +181,37 @@ export default function ArticulosV2() {
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h2 className="text-3xl font-extrabold tracking-tight text-gray-900">Catálogo de artículos</h2>
-          <p className="mt-1 text-sm text-gray-500">Alta rápida con código automático, ubicación y entrada inicial.</p>
+          <p className="mt-1 text-sm text-gray-500">
+            {sectorFiltro ? `Mostrando sector: ${sectorFiltro}` : 'Alta rápida con código automático, ubicación y entrada inicial.'}
+          </p>
         </div>
         <button onClick={abrirNuevo} className="inline-flex items-center justify-center gap-2 rounded-2xl bg-amber-500 px-5 py-3 text-sm font-black text-gray-950 shadow-xs hover:bg-amber-400">
           <Plus className="h-5 w-5" /> Nuevo artículo
         </button>
       </div>
 
-      <div className="grid gap-4 rounded-3xl border border-gray-100 bg-white p-5 shadow-xs md:grid-cols-[1fr_220px]">
+      <div className="grid gap-4 rounded-3xl border border-gray-100 bg-white p-5 shadow-xs md:grid-cols-[1fr_220px_auto]">
         <div className="relative">
           <Search className="absolute left-3 top-3.5 h-4 w-4 text-gray-400" />
           <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} className="w-full rounded-xl border border-gray-200 bg-gray-50 py-3 pl-10 pr-4 text-sm outline-none focus:border-amber-500" placeholder="Buscar por código, nombre, marca, modelo o ubicación..." />
         </div>
-        <select value={sectorFiltro} onChange={(e) => setSectorFiltro(e.target.value)} className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold outline-none focus:border-amber-500">
+        <select value={sectorFiltro} onChange={(e) => cambiarSectorFiltro(e.target.value)} className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold outline-none focus:border-amber-500">
           <option value="">Todos los sectores</option>
           {sectoresBase.map((sector) => <option key={sector} value={sector}>{sector}</option>)}
         </select>
+        {sectorFiltro && (
+          <button onClick={limpiarFiltroSector} className="rounded-xl bg-gray-100 px-4 py-3 text-xs font-black text-gray-600 hover:bg-gray-200">
+            Quitar filtro
+          </button>
+        )}
       </div>
+
+      {sectorFiltro && (
+        <div className="flex items-center justify-between gap-3 rounded-2xl border border-amber-100 bg-amber-50 p-4 text-sm font-bold text-amber-800">
+          <span>Filtro activo desde pantalla inicial: {sectorFiltro} · {articulosFiltrados.length} artículos encontrados</span>
+          <button onClick={limpiarFiltroSector} className="rounded-lg bg-white px-3 py-2 text-xs font-black text-amber-700 ring-1 ring-amber-100">Ver todos</button>
+        </div>
+      )}
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {articulosFiltrados.map((art) => {
@@ -223,41 +263,19 @@ export default function ArticulosV2() {
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Código interno" help="Opcional. Si lo dejas vacío, se usa el automático.">
-                  <input value={form.codigo} onChange={(e) => setField('codigo', e.target.value.toUpperCase())} placeholder={codigoSugerido} className="field font-mono" />
-                </Field>
-                <Field label="Nombre artículo *">
-                  <input required value={form.nombre} onChange={(e) => setField('nombre', e.target.value)} placeholder="Ej. Bombilla LED E27" className="field" />
-                </Field>
-                <Field label="Sector *">
-                  <select required value={form.categoria} onChange={(e) => setField('categoria', e.target.value)} className="field">
-                    {sectoresBase.map((sector) => <option key={sector} value={sector}>{sector}</option>)}
-                  </select>
-                </Field>
-                <Field label="Unidad de medida">
-                  <select value={form.unidad} onChange={(e) => setField('unidad', e.target.value)} className="field">
-                    <option value="ud">Unidades (ud)</option>
-                    <option value="metros">Metros</option>
-                    <option value="cajas">Cajas</option>
-                    <option value="rollos">Rollos</option>
-                    <option value="sacos">Sacos</option>
-                    <option value="pares">Pares</option>
-                  </select>
-                </Field>
+                <Field label="Código interno" help="Opcional. Si lo dejas vacío, se usa el automático."><input value={form.codigo} onChange={(e) => setField('codigo', e.target.value.toUpperCase())} placeholder={codigoSugerido} className="field font-mono" /></Field>
+                <Field label="Nombre artículo *"><input required value={form.nombre} onChange={(e) => setField('nombre', e.target.value)} placeholder="Ej. Bombilla LED E27" className="field" /></Field>
+                <Field label="Sector *"><select required value={form.categoria} onChange={(e) => setField('categoria', e.target.value)} className="field">{sectoresBase.map((sector) => <option key={sector} value={sector}>{sector}</option>)}</select></Field>
+                <Field label="Unidad de medida"><select value={form.unidad} onChange={(e) => setField('unidad', e.target.value)} className="field"><option value="ud">Unidades (ud)</option><option value="metros">Metros</option><option value="cajas">Cajas</option><option value="rollos">Rollos</option><option value="sacos">Sacos</option><option value="pares">Pares</option></select></Field>
                 <Field label="Marca"><input value={form.marca || ''} onChange={(e) => setField('marca', e.target.value)} className="field" /></Field>
                 <Field label="Modelo"><input value={form.modelo || ''} onChange={(e) => setField('modelo', e.target.value)} className="field" /></Field>
-                <Field label={editando ? 'Stock actual' : 'Cantidad inicial / entrada inicial'} help={editando ? 'Para cambiar stock usa Entradas/Salidas/Inventario.' : 'Si pones cantidad, se crea la entrada inicial automáticamente.'}>
-                  <input disabled={Boolean(editando)} min="0" type="number" inputMode="numeric" value={form.stockActual} onChange={(e) => setField('stockActual', Number(e.target.value))} className="field text-lg font-black disabled:bg-gray-100 disabled:text-gray-400" />
-                </Field>
+                <Field label={editando ? 'Stock actual' : 'Cantidad inicial / entrada inicial'} help={editando ? 'Para cambiar stock usa Entradas/Salidas/Inventario.' : 'Si pones cantidad, se crea la entrada inicial automáticamente.'}><input disabled={Boolean(editando)} min="0" type="number" inputMode="numeric" value={form.stockActual} onChange={(e) => setField('stockActual', Number(e.target.value))} className="field text-lg font-black disabled:bg-gray-100 disabled:text-gray-400" /></Field>
                 <Field label="Stock mínimo / alerta"><input min="0" type="number" inputMode="numeric" value={form.stockMinimo} onChange={(e) => setField('stockMinimo', Number(e.target.value))} className="field" /></Field>
               </div>
 
               <div className="rounded-3xl border border-gray-100 bg-gray-50 p-4">
                 <div className="flex items-center gap-2 text-sm font-black text-gray-800"><MapPin className="h-4 w-4 text-amber-500" /> Ubicación en almacén principal</div>
-                <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_auto]">
-                  <input list="ubicaciones-list" value={form.ubicacion || ''} onChange={(e) => setField('ubicacion', e.target.value.toUpperCase())} placeholder="Ej. ELE-A01-B1" className="field font-mono" />
-                  <button type="button" onClick={() => setField('ubicacion', ubicacionesSugeridas[0] || '')} className="rounded-xl bg-amber-500 px-4 py-3 text-xs font-black text-gray-950 hover:bg-amber-400">Sugerir</button>
-                </div>
+                <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_auto]"><input list="ubicaciones-list" value={form.ubicacion || ''} onChange={(e) => setField('ubicacion', e.target.value.toUpperCase())} placeholder="Ej. ELE-A01-B1" className="field font-mono" /><button type="button" onClick={() => setField('ubicacion', ubicacionesSugeridas[0] || '')} className="rounded-xl bg-amber-500 px-4 py-3 text-xs font-black text-gray-950 hover:bg-amber-400">Sugerir</button></div>
                 <datalist id="ubicaciones-list">{[...(ubicaciones || []), ...ubicacionesSugeridas].map((u) => <option key={u} value={u} />)}</datalist>
                 <div className="mt-3 flex flex-wrap gap-2">{ubicacionesSugeridas.slice(0, 6).map((u) => <button key={u} type="button" onClick={() => setField('ubicacion', u)} className="rounded-full bg-white px-3 py-1 text-xs font-black text-gray-600 ring-1 ring-gray-200 hover:bg-amber-50 hover:text-amber-700">{u}</button>)}</div>
               </div>
@@ -268,7 +286,6 @@ export default function ArticulosV2() {
               </div>
 
               {(form.foto || form.fotoId) && <img src={form.foto || imageService.placeholder(form.nombre)} alt="Vista previa" className="h-36 w-48 rounded-2xl border border-gray-100 object-cover" />}
-
               <Field label="Descripción"><textarea rows="3" value={form.descripcion || ''} onChange={(e) => setField('descripcion', e.target.value)} className="field resize-none" /></Field>
 
               <div className="flex flex-col gap-2 border-t border-gray-100 pt-5 sm:flex-row sm:justify-end">

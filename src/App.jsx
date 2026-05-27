@@ -3,7 +3,7 @@ import { AppProvider, useApp } from './context/AppContext';
 import Layout from './components/Layout';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
-import Articulos from './components/Articulos';
+import Articulos from './components/ArticulosV2';
 import Movimientos from './components/Movimientos';
 import Personas from './components/Personas';
 import Pedidos from './components/Pedidos';

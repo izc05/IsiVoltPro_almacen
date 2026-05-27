@@ -28,20 +28,23 @@ export default function Layout({ children }) {
   const stockBajoCount = articulos.filter((a) => a.activo && Number(a.stockActual) <= Number(a.stockMinimo)).length;
 
   const baseMenuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'qr', label: 'QR rápido', icon: QrCode },
-    { id: 'retirada', label: 'Retirada', icon: ArrowUpRight, force: true },
-    { id: 'articulos', label: 'Artículos', icon: Package, badge: stockBajoCount > 0 ? stockBajoCount : null },
-    { id: 'movimientos', label: 'Movimientos', icon: ClipboardList },
-    { id: 'personas', label: 'Técnicos & Prov.', icon: Users },
-    { id: 'pedidos', label: 'Pedidos', icon: ShoppingBag },
-    { id: 'inventario', label: 'Auditoría', icon: QrCode },
-    { id: 'informes', label: 'Informes', icon: FileBarChart2 },
-    { id: 'auditoria', label: 'Historial', icon: ShieldCheck },
-    { id: 'ajustes', label: 'Ajustes', icon: Settings }
+    { id: 'dashboard', label: 'Inicio', icon: LayoutDashboard, group: 'Trabajo diario' },
+    { id: 'retirada', label: 'Retirada', icon: ArrowUpRight, group: 'Trabajo diario' },
+    { id: 'movimientos', label: 'Entrada', icon: ClipboardList, group: 'Trabajo diario' },
+    { id: 'qr', label: 'Escanear', icon: QrCode, group: 'Trabajo diario' },
+    { id: 'articulos', label: 'Artículos', icon: Package, badge: stockBajoCount > 0 ? stockBajoCount : null, group: 'Trabajo diario' },
+    { id: 'personas', label: 'Técnicos/Prov.', icon: Users, group: 'Gestión' },
+    { id: 'pedidos', label: 'Pedidos', icon: ShoppingBag, group: 'Gestión' },
+    { id: 'inventario', label: 'Recuento', icon: ClipboardList, group: 'Gestión' },
+    { id: 'informes', label: 'Informes', icon: FileBarChart2, group: 'Gestión' },
+    { id: 'auditoria', label: 'Auditoría', icon: ShieldCheck, group: 'Admin' },
+    { id: 'ajustes', label: 'Ajustes', icon: Settings, group: 'Admin' }
   ];
 
-  const menuItems = baseMenuItems.filter((item) => item.force || hasPermission(item.id));
+  const menuItems = baseMenuItems.filter((item) => hasPermission(item.id));
+  const menuGroups = ['Trabajo diario', 'Gestión', 'Admin']
+    .map((group) => ({ group, items: menuItems.filter((item) => item.group === group) }))
+    .filter((section) => section.items.length > 0);
   const mobileMenuItems = menuItems.filter((item) => item.id !== 'qr');
 
   const navigateTo = (tabId) => {
@@ -80,12 +83,17 @@ export default function Layout({ children }) {
 
           <div className="mx-4 mt-4 rounded-xl border border-gray-800 bg-gray-950/70 p-3"><p className="text-sm font-bold text-white">{currentUser?.nombre}</p><p className="mt-1 text-xs font-semibold text-amber-400">{roles[currentUser?.rol] || currentUser?.rol}</p></div>
 
-          <nav className="p-4 space-y-1">
-            {menuItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeTab === item.id;
-              return <button key={item.id} onClick={() => navigateTo(item.id)} className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 group text-left ${isActive ? 'bg-amber-600 text-white font-medium shadow-lg shadow-amber-900/20' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'}`}><div className="flex items-center space-x-3"><Icon className={`h-5 w-5 ${isActive ? 'text-white' : 'text-gray-400 group-hover:text-amber-500'}`} /><span>{item.label}</span></div>{item.badge && <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${isActive ? 'bg-white text-amber-700' : 'bg-red-500/20 text-red-400'}`}>{item.badge}</span>}</button>;
-            })}
+          <nav className="p-4 space-y-4">
+            {menuGroups.map((section) => (
+              <div key={section.group} className="space-y-1">
+                <p className="px-4 text-[10px] font-black uppercase tracking-wider text-gray-600">{section.group}</p>
+                {section.items.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = activeTab === item.id;
+                  return <button key={item.id} onClick={() => navigateTo(item.id)} className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 group text-left ${isActive ? 'bg-amber-600 text-white font-medium shadow-lg shadow-amber-900/20' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'}`}><div className="flex items-center space-x-3"><Icon className={`h-5 w-5 ${isActive ? 'text-white' : 'text-gray-400 group-hover:text-amber-500'}`} /><span>{item.label}</span></div>{item.badge && <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${isActive ? 'bg-white text-amber-700' : 'bg-red-500/20 text-red-400'}`}>{item.badge}</span>}</button>;
+                })}
+              </div>
+            ))}
           </nav>
         </div>
 

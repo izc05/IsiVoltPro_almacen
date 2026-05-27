@@ -83,8 +83,16 @@ export default function QRScanner({ onScanResult = null, inlineMode = false }) {
       setScannerState('idle');
       return;
     }
-    try { await scanner.stop(); } catch {}
-    try { await scanner.clear(); } catch {}
+    try {
+      await scanner.stop();
+    } catch {
+      // Puede estar ya parado si el navegador cortó el permiso de cámara.
+    }
+    try {
+      await scanner.clear();
+    } catch {
+      // No bloquea el uso manual si la limpieza del visor falla.
+    }
     scannerRef.current = null;
     setScannerState('idle');
   };

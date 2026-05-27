@@ -142,10 +142,17 @@ export default function Dashboard() {
         </div>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-3">
-        <ActionCard icon={QrCode} title="Escanear QR" text="Detecta la referencia y abre acciones rápidas." onClick={() => setActiveTab('qr')} primary />
-        <ActionCard icon={ArrowDownLeft} title="Registrar entrada" text="Recepción de material, proveedor y albarán." onClick={() => setActiveTab('movimientos')} />
-        <ActionCard icon={Truck} title="Proveedores y pedidos" text="Consulta proveedores, pedidos pendientes y material crítico." onClick={() => setActiveTab('personas')} />
+      <section className="rounded-3xl border border-gray-100 bg-white p-5 shadow-xs lg:p-6">
+        <div className="mb-4">
+          <h3 className="text-xl font-black text-gray-900">Qué quieres hacer ahora</h3>
+          <p className="text-sm text-gray-500">Los cuatro flujos diarios del almacén, sin buscar entre pantallas.</p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <ActionCard icon={ArrowUpRight} title="Retirar material" text="Técnico, artículos, cantidades y guardar salida." onClick={() => setActiveTab('retirada')} primary />
+          <ActionCard icon={ArrowDownLeft} title="Recibir entrada" text="Proveedor, albarán y ubicación en almacén." onClick={() => setActiveTab('movimientos')} />
+          <ActionCard icon={QrCode} title="Escanear código" text="QR, EAN o código interno para actuar rápido." onClick={() => setActiveTab('qr')} />
+          <ActionCard icon={Search} title="Buscar artículo" text="Ver stock por sector, ubicación o proveedor." onClick={() => abrirCatalogoSector('')} />
+        </div>
       </section>
 
       <section className="rounded-3xl border border-gray-100 bg-white p-5 shadow-xs lg:p-6">

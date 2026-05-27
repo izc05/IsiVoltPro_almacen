@@ -23,7 +23,7 @@ function AppContent() {
   }
 
   const renderContent = () => {
-    if (activeTab !== 'retirada' && !hasPermission(activeTab)) {
+    if (!hasPermission(activeTab)) {
       return <Dashboard />;
     }
 

@@ -24,6 +24,7 @@ export function AppProvider({ children }) {
   const [ajustes, setAjustes] = useState({});
   const [currentUser, setCurrentUser] = useState(storageService.getCurrentUser());
   const [notification, setNotification] = useState(null);
+  const [catalogoFiltroSector, setCatalogoFiltroSector] = useState('');
 
   // Cargar datos al iniciar
   const refrescarDatos = () => {
@@ -115,6 +116,11 @@ export function AppProvider({ children }) {
       return;
     }
     setActiveTab(tab);
+  };
+
+  const abrirCatalogoSector = (sector = '') => {
+    setCatalogoFiltroSector(sector);
+    setTabProtegida('articulos');
   };
 
   // --- ARTÍCULOS ---
@@ -460,6 +466,9 @@ export function AppProvider({ children }) {
       roles: ROLES,
       permissions: PERMISSIONS,
       notification,
+      catalogoFiltroSector,
+      setCatalogoFiltroSector,
+      abrirCatalogoSector,
       login,
       logout,
       hasPermission,

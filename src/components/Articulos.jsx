@@ -22,6 +22,8 @@ export default function Articulos() {
     almacenes,
     sectores,
     ubicaciones,
+    catalogoFiltroSector,
+    setCatalogoFiltroSector,
     crearArticulo, 
     editarArticulo, 
     movimientos
@@ -89,6 +91,10 @@ export default function Articulos() {
   }, [articulos]);
 
   const sectoresDisponibles = Array.from(new Set([...(sectores || []), ...articulos.map(a => a.categoria).filter(Boolean)]));
+
+  useEffect(() => {
+    setCategoriaFiltro(catalogoFiltroSector || '');
+  }, [catalogoFiltroSector]);
 
   // Filtrado de artículos
   const articulosFiltrados = articulos.filter(art => {
@@ -208,6 +214,20 @@ export default function Articulos() {
 
   const getAlmacenNombre = () => almacenes.find((almacen) => almacen.id === almacenFiltro)?.nombre || 'Todos los almacenes';
 
+  const cambiarCategoriaFiltro = (sector) => {
+    setCategoriaFiltro(sector);
+    setCatalogoFiltroSector(sector);
+  };
+
+  const limpiarFiltros = () => {
+    setBusqueda('');
+    setCategoriaFiltro('');
+    setCatalogoFiltroSector('');
+    setProveedorFiltro('');
+    setAlmacenFiltro('');
+    setMostrarInactivos(false);
+  };
+
   // Enlace del QR
   const getQrUrl = (codigo) => {
     return `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(codigo)}`;
@@ -223,7 +243,9 @@ export default function Articulos() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-3xl font-extrabold tracking-tight text-gray-900">Catálogo de Artículos</h2>
-          <p className="text-gray-500 text-sm mt-1">Gestión del stock, ubicaciones y códigos QR de productos.</p>
+          <p className="text-gray-500 text-sm mt-1">
+            {categoriaFiltro ? `Material filtrado por sector: ${categoriaFiltro}.` : 'Gestión del stock, ubicaciones y códigos QR de productos.'}
+          </p>
         </div>
         <button
           onClick={abrirCrear}
@@ -252,7 +274,7 @@ export default function Articulos() {
         <div>
           <select
             value={categoriaFiltro}
-            onChange={(e) => setCategoriaFiltro(e.target.value)}
+            onChange={(e) => cambiarCategoriaFiltro(e.target.value)}
             className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-hidden focus:border-amber-500"
           >
             <option value="">Todos los Sectores</option>
@@ -304,6 +326,20 @@ export default function Articulos() {
           />
         </div>
       </div>
+
+      {(categoriaFiltro || busqueda || proveedorFiltro || almacenFiltro || mostrarInactivos) && (
+        <div className="flex flex-col gap-3 rounded-2xl border border-amber-100 bg-amber-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs font-black uppercase tracking-wider text-amber-700">Filtro activo</p>
+            <p className="text-sm font-bold text-gray-800">
+              {categoriaFiltro ? `Mostrando sólo artículos de ${categoriaFiltro}` : 'Mostrando catálogo filtrado'}
+            </p>
+          </div>
+          <button onClick={limpiarFiltros} className="rounded-xl bg-white px-4 py-2 text-xs font-black text-gray-700 shadow-xs hover:bg-amber-100">
+            Ver todos los artículos
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-xs">

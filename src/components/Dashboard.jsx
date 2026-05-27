@@ -32,6 +32,7 @@ export default function Dashboard() {
     sectores,
     movimientos,
     setActiveTab,
+    abrirCatalogoSector,
     generarPedidoAutomatico,
     hasPermission
   } = useApp();
@@ -102,7 +103,7 @@ export default function Dashboard() {
                 <QrCode className="h-5 w-5" />
                 Escanear artículo
               </button>
-              <button onClick={() => setActiveTab('articulos')} className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/10 px-5 py-3 text-sm font-bold text-white hover:bg-white/15">
+              <button onClick={() => abrirCatalogoSector('')} className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/10 px-5 py-3 text-sm font-bold text-white hover:bg-white/15">
                 <Search className="h-5 w-5" />
                 Buscar material
               </button>
@@ -134,7 +135,7 @@ export default function Dashboard() {
         </div>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {resumenSectores.map((item) => (
-            <button key={item.sector} onClick={() => setActiveTab('articulos')} className="group overflow-hidden rounded-2xl border border-gray-100 bg-gray-50 text-left shadow-xs transition hover:-translate-y-0.5 hover:shadow-md">
+            <button key={item.sector} onClick={() => abrirCatalogoSector(item.sector)} className="group overflow-hidden rounded-2xl border border-gray-100 bg-gray-50 text-left shadow-xs transition hover:-translate-y-0.5 hover:shadow-md">
               <div className={`relative h-28 bg-gradient-to-br ${sectorStyle[item.sector] || 'from-gray-500 to-gray-900'}`}>
                 {item.imagen && <img src={item.imagen} alt={item.sector} className="absolute inset-0 h-full w-full object-cover opacity-35 mix-blend-screen" />}
                 <div className="absolute inset-0 bg-gradient-to-t from-gray-950/60 to-transparent" />

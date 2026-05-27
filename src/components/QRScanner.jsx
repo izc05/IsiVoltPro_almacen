@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { AlertTriangle, ArrowDownLeft, ArrowUpRight, Camera, CheckCircle, ClipboardCheck, Plus, QrCode, RefreshCw, Search } from 'lucide-react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { AlertTriangle, ArrowDownLeft, ArrowUpRight, Camera, CheckCircle, ClipboardCheck, Plus, QrCode, RefreshCw, Search, X } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { searchService } from '../services/searchService';
 
 const ALMACEN_ID = 'alm-principal';
 const ALMACEN_NOMBRE = 'Almacén principal';
@@ -30,9 +31,29 @@ export default function QRScanner({ onScanResult = null, inlineMode = false }) {
   const [error, setError] = useState('');
   const [ok, setOk] = useState('');
   const [continuo, setContinuo] = useState(true);
+  const [scannerState, setScannerState] = useState('idle');
+  const [cameraError, setCameraError] = useState('');
 
+  const reactId = useId();
+  const scannerId = useMemo(() => `qr-reader-${reactId.replace(/:/g, '')}`, [reactId]);
+  const scannerRef = useRef(null);
+  const lastScanRef = useRef({ code: '', at: 0 });
   const tecnicosActivos = tecnicos.filter((t) => t.activo);
   const stockActual = articulo ? Number(articulo.stockPorAlmacen?.[ALMACEN_ID] ?? articulo.stockActual) || 0 : 0;
+  const articulosActivos = useMemo(() => articulos.filter((art) => art.activo), [articulos]);
+  const articulosRapidos = useMemo(() => {
+    const resultados = searchService.sortByRelevance(
+      searchService.filterArticles(articulosActivos, { busqueda: codigoManual, mostrarInactivos: false }),
+      codigoManual
+    );
+    return resultados.slice(0, codigoManual.trim() ? 8 : 10);
+  }, [articulosActivos, codigoManual]);
+
+  useEffect(() => () => {
+    const scanner = scannerRef.current;
+    if (!scanner) return;
+    scanner.stop?.().catch(() => {}).finally(() => scanner.clear?.().catch(() => {}));
+  }, []);
 
   const procesarCodigo = (raw) => {
     const code = String(raw || '').trim().toUpperCase();
@@ -45,6 +66,69 @@ export default function QRScanner({ onScanResult = null, inlineMode = false }) {
     setCantidad('1');
     setStockFisico('');
     onScanResult?.(code, encontrado || null);
+  };
+
+  const stopCamera = async () => {
+    const scanner = scannerRef.current;
+    if (!scanner) {
+      setScannerState('idle');
+      return;
+    }
+
+    try {
+      await scanner.stop();
+    } catch {
+      // Puede estar ya parado.
+    }
+
+    try {
+      await scanner.clear();
+    } catch {
+      // No bloquea el uso manual.
+    }
+
+    scannerRef.current = null;
+    setScannerState('idle');
+  };
+
+  const startCamera = async () => {
+    if (scannerState === 'starting' || scannerState === 'scanning') return;
+    setCameraError('');
+    setError('');
+
+    if (!window.isSecureContext && !['localhost', '127.0.0.1'].includes(window.location.hostname)) {
+      setCameraError('La cámara sólo funciona en HTTPS o en local. Usa GitHub Pages o el código manual.');
+      return;
+    }
+
+    try {
+      setScannerState('starting');
+      const { Html5Qrcode } = await import('html5-qrcode');
+      const scanner = new Html5Qrcode(scannerId, false);
+      scannerRef.current = scanner;
+
+      await scanner.start(
+        { facingMode: 'environment' },
+        { fps: 10, qrbox: { width: 240, height: 240 }, aspectRatio: 1 },
+        (decodedText) => {
+          const code = String(decodedText || '').trim().toUpperCase();
+          const now = Date.now();
+          if (!code || (lastScanRef.current.code === code && now - lastScanRef.current.at < 1800)) return;
+          lastScanRef.current = { code, at: now };
+          procesarCodigo(code);
+          if (!continuo) {
+            stopCamera();
+          }
+        },
+        () => {}
+      );
+
+      setScannerState('scanning');
+    } catch (err) {
+      scannerRef.current = null;
+      setScannerState('idle');
+      setCameraError(err?.message || 'No se pudo iniciar la cámara. Revisa permisos o usa el código manual.');
+    }
   };
 
   const listoSiguiente = () => {
@@ -112,13 +196,27 @@ export default function QRScanner({ onScanResult = null, inlineMode = false }) {
         <section className="space-y-4">
           {!articulo && (
             <div className="relative flex min-h-[320px] flex-col items-center justify-center overflow-hidden rounded-3xl border border-gray-800 bg-gray-950 p-5 text-white shadow-xl">
-              <div className="absolute inset-x-0 top-1/2 z-10 h-1 animate-bounce bg-amber-500/80 shadow-[0_0_15px_#f59e0b]" />
-              <QrCode className="h-16 w-16 text-amber-400" />
-              <h3 className="mt-4 text-xl font-black">Escanea el producto</h3>
-              <p className="mt-2 max-w-sm text-center text-sm text-gray-400">Versión estable: usa el código manual o los accesos rápidos. La cámara real se reactivará después de comprobar la carga.</p>
-              <div className="relative z-20 mt-6 rounded-2xl bg-amber-500/10 px-4 py-3 text-xs font-bold text-amber-100">
-                <Camera className="mr-2 inline h-4 w-4" /> Cámara temporalmente desactivada para evitar pantalla en blanco.
+              {scannerState === 'scanning' && <div className="pointer-events-none absolute inset-x-8 top-1/2 z-10 h-1 animate-bounce bg-amber-500/80 shadow-[0_0_15px_#f59e0b]" />}
+              <div id={scannerId} className={`relative z-0 min-h-64 w-full max-w-sm overflow-hidden rounded-2xl bg-gray-900 ${scannerState === 'scanning' ? 'border border-amber-400/40' : ''}`} />
+              {scannerState !== 'scanning' && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
+                  <QrCode className="h-16 w-16 text-amber-400" />
+                  <h3 className="mt-4 text-xl font-black">Escanea el producto</h3>
+                  <p className="mt-2 max-w-sm text-sm text-gray-400">Activa la cámara del móvil o usa el código manual. El escaneo abre entrada, salida o recuento del artículo.</p>
+                </div>
+              )}
+              <div className="relative z-20 mt-5 flex flex-wrap justify-center gap-2">
+                {scannerState === 'scanning' ? (
+                  <button onClick={stopCamera} className="inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-2 text-xs font-black text-gray-950">
+                    <X className="h-4 w-4" /> Parar cámara
+                  </button>
+                ) : (
+                  <button onClick={startCamera} disabled={scannerState === 'starting'} className="inline-flex items-center gap-2 rounded-2xl bg-amber-500 px-4 py-2 text-xs font-black text-gray-950 disabled:opacity-60">
+                    <Camera className="h-4 w-4" /> {scannerState === 'starting' ? 'Abriendo cámara...' : 'Escanear con cámara'}
+                  </button>
+                )}
               </div>
+              {cameraError && <p className="relative z-20 mt-3 rounded-xl bg-red-500/15 px-3 py-2 text-center text-xs font-bold text-red-100">{cameraError}</p>}
             </div>
           )}
 
@@ -135,9 +233,10 @@ export default function QRScanner({ onScanResult = null, inlineMode = false }) {
             </div>
             {!articulo && (
               <div className="mt-3 grid grid-cols-2 gap-2">
-                {articulos.slice(0, 8).map((art) => (
+                {articulosRapidos.map((art) => (
                   <button key={art.id} onClick={() => procesarCodigo(art.codigo)} className="truncate rounded-lg border border-gray-100 p-2 text-left text-[10px] font-bold text-gray-600 hover:border-amber-200 hover:bg-amber-50">
-                    {art.codigo}
+                    <span className="block truncate font-mono text-gray-900">{art.codigo}</span>
+                    <span className="block truncate text-gray-400">{art.categoria} · {art.nombre}</span>
                   </button>
                 ))}
               </div>

@@ -11,6 +11,7 @@ import Inventario from './components/Inventario';
 import Informes from './components/Informes';
 import Auditoria from './components/Auditoria';
 import Ajustes from './components/Ajustes';
+import RetiradaRapida from './components/RetiradaRapida';
 
 const QRScanner = lazy(() => import('./components/QRScanner'));
 
@@ -35,6 +36,8 @@ function AppContent() {
             <QRScanner />
           </Suspense>
         );
+      case 'retirada':
+        return <RetiradaRapida />;
       case 'articulos':
         return <Articulos />;
       case 'movimientos':

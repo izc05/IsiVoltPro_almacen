@@ -62,12 +62,17 @@ export default function ArticulosV2() {
 
   const [busqueda, setBusqueda] = useState('');
   const [sectorFiltro, setSectorFiltro] = useState(catalogoFiltroSector || '');
+  const [proveedorFiltro, setProveedorFiltro] = useState('');
+  const [stockFiltro, setStockFiltro] = useState('');
+  const [ubicacionFiltro, setUbicacionFiltro] = useState('');
   const [modal, setModal] = useState(false);
   const [editando, setEditando] = useState(null);
   const [form, setForm] = useState({ ...initialForm });
   const [error, setError] = useState('');
 
   const sectoresBase = Array.from(new Set([...(sectores || []), 'Electricidad', 'Fontanería', 'Mecánico', 'Albañil', 'Jardín', 'Calefactor', 'Clima']));
+  const proveedoresBase = Array.from(new Set([...(proveedores || []).map((p) => p.nombre), ...articulos.map((a) => a.proveedorPrincipal).filter(Boolean)])).sort();
+  const ubicacionesBase = Array.from(new Set([...(ubicaciones || []), ...articulos.map((a) => a.ubicacion).filter(Boolean)])).sort();
 
   useEffect(() => {
     setSectorFiltro(catalogoFiltroSector || '');
@@ -78,8 +83,21 @@ export default function ArticulosV2() {
 
   const articulosFiltrados = articulos.filter((art) => {
     const q = normalize(busqueda);
-    const text = normalize(`${art.codigo} ${art.nombre} ${art.categoria} ${art.marca} ${art.modelo} ${art.ubicacion}`);
-    return (!q || text.includes(q)) && (!sectorFiltro || art.categoria === sectorFiltro) && art.activo !== false;
+    const text = normalize(`${art.codigo} ${art.nombre} ${art.categoria} ${art.marca} ${art.modelo} ${art.ubicacion} ${art.proveedorPrincipal}`);
+    const stock = Number(art.stockPorAlmacen?.['alm-principal'] ?? art.stockActual) || 0;
+    const minimo = Number(art.stockMinimo) || 0;
+    const cumpleStock = !stockFiltro
+      || (stockFiltro === 'bajo' && stock <= minimo)
+      || (stockFiltro === 'ok' && stock > minimo)
+      || (stockFiltro === 'cero' && stock === 0)
+      || (stockFiltro === 'sin-ubicacion' && !art.ubicacion);
+
+    return (!q || text.includes(q))
+      && (!sectorFiltro || art.categoria === sectorFiltro)
+      && (!proveedorFiltro || art.proveedorPrincipal === proveedorFiltro)
+      && (!ubicacionFiltro || art.ubicacion === ubicacionFiltro)
+      && cumpleStock
+      && art.activo !== false;
   });
 
   function generarCodigo(sector, nombre, lista) {
@@ -101,16 +119,22 @@ export default function ArticulosV2() {
     setCatalogoFiltroSector?.(value);
   };
 
-  const limpiarFiltroSector = () => {
+  const limpiarFiltros = () => {
+    setBusqueda('');
     cambiarSectorFiltro('');
+    setProveedorFiltro('');
+    setStockFiltro('');
+    setUbicacionFiltro('');
   };
+
+  const hayFiltros = Boolean(busqueda || sectorFiltro || proveedorFiltro || stockFiltro || ubicacionFiltro);
 
   const abrirNuevo = () => {
     setEditando(null);
     setForm({
       ...initialForm,
       categoria: sectorFiltro || catalogoFiltroSector || 'Electricidad',
-      proveedorPrincipal: proveedores[0]?.nombre || ''
+      proveedorPrincipal: proveedorFiltro || proveedores[0]?.nombre || ''
     });
     setError('');
     setModal(true);
@@ -138,14 +162,8 @@ export default function ArticulosV2() {
     setError('');
 
     const codigoFinal = (form.codigo || codigoSugerido).trim().toUpperCase();
-    if (!form.nombre.trim()) {
-      setError('El nombre del artículo es obligatorio.');
-      return;
-    }
-    if (!form.categoria.trim()) {
-      setError('El sector es obligatorio.');
-      return;
-    }
+    if (!form.nombre.trim()) return setError('El nombre del artículo es obligatorio.');
+    if (!form.categoria.trim()) return setError('El sector es obligatorio.');
 
     try {
       const payload = {
@@ -182,7 +200,7 @@ export default function ArticulosV2() {
         <div>
           <h2 className="text-3xl font-extrabold tracking-tight text-gray-900">Catálogo de artículos</h2>
           <p className="mt-1 text-sm text-gray-500">
-            {sectorFiltro ? `Mostrando sector: ${sectorFiltro}` : 'Alta rápida con código automático, ubicación y entrada inicial.'}
+            {hayFiltros ? `${articulosFiltrados.length} artículos encontrados con filtros activos` : 'Alta rápida con código automático, ubicación y entrada inicial.'}
           </p>
         </div>
         <button onClick={abrirNuevo} className="inline-flex items-center justify-center gap-2 rounded-2xl bg-amber-500 px-5 py-3 text-sm font-black text-gray-950 shadow-xs hover:bg-amber-400">
@@ -190,26 +208,47 @@ export default function ArticulosV2() {
         </button>
       </div>
 
-      <div className="grid gap-4 rounded-3xl border border-gray-100 bg-white p-5 shadow-xs md:grid-cols-[1fr_220px_auto]">
-        <div className="relative">
-          <Search className="absolute left-3 top-3.5 h-4 w-4 text-gray-400" />
-          <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} className="w-full rounded-xl border border-gray-200 bg-gray-50 py-3 pl-10 pr-4 text-sm outline-none focus:border-amber-500" placeholder="Buscar por código, nombre, marca, modelo o ubicación..." />
+      <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-xs">
+        <div className="grid gap-3 md:grid-cols-[1.3fr_0.8fr_0.8fr_0.8fr] xl:grid-cols-[1.5fr_0.8fr_0.8fr_0.8fr_0.8fr_auto]">
+          <div className="relative">
+            <Search className="absolute left-3 top-3.5 h-4 w-4 text-gray-400" />
+            <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} className="w-full rounded-xl border border-gray-200 bg-gray-50 py-3 pl-10 pr-4 text-sm outline-none focus:border-amber-500" placeholder="Buscar por código, nombre, marca, modelo, proveedor o ubicación..." />
+          </div>
+          <select value={sectorFiltro} onChange={(e) => cambiarSectorFiltro(e.target.value)} className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold outline-none focus:border-amber-500">
+            <option value="">Todos los sectores</option>
+            {sectoresBase.map((sector) => <option key={sector} value={sector}>{sector}</option>)}
+          </select>
+          <select value={proveedorFiltro} onChange={(e) => setProveedorFiltro(e.target.value)} className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold outline-none focus:border-amber-500">
+            <option value="">Todos los proveedores</option>
+            {proveedoresBase.map((prov) => <option key={prov} value={prov}>{prov}</option>)}
+          </select>
+          <select value={stockFiltro} onChange={(e) => setStockFiltro(e.target.value)} className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold outline-none focus:border-amber-500">
+            <option value="">Todo el stock</option>
+            <option value="bajo">Stock bajo</option>
+            <option value="ok">Stock correcto</option>
+            <option value="cero">Stock cero</option>
+            <option value="sin-ubicacion">Sin ubicación</option>
+          </select>
+          <select value={ubicacionFiltro} onChange={(e) => setUbicacionFiltro(e.target.value)} className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold outline-none focus:border-amber-500">
+            <option value="">Todas las ubicaciones</option>
+            {ubicacionesBase.map((ubi) => <option key={ubi} value={ubi}>{ubi}</option>)}
+          </select>
+          {hayFiltros && (
+            <button onClick={limpiarFiltros} className="rounded-xl bg-gray-100 px-4 py-3 text-xs font-black text-gray-600 hover:bg-gray-200">
+              Limpiar
+            </button>
+          )}
         </div>
-        <select value={sectorFiltro} onChange={(e) => cambiarSectorFiltro(e.target.value)} className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold outline-none focus:border-amber-500">
-          <option value="">Todos los sectores</option>
-          {sectoresBase.map((sector) => <option key={sector} value={sector}>{sector}</option>)}
-        </select>
-        {sectorFiltro && (
-          <button onClick={limpiarFiltroSector} className="rounded-xl bg-gray-100 px-4 py-3 text-xs font-black text-gray-600 hover:bg-gray-200">
-            Quitar filtro
-          </button>
-        )}
       </div>
 
-      {sectorFiltro && (
-        <div className="flex items-center justify-between gap-3 rounded-2xl border border-amber-100 bg-amber-50 p-4 text-sm font-bold text-amber-800">
-          <span>Filtro activo desde pantalla inicial: {sectorFiltro} · {articulosFiltrados.length} artículos encontrados</span>
-          <button onClick={limpiarFiltroSector} className="rounded-lg bg-white px-3 py-2 text-xs font-black text-amber-700 ring-1 ring-amber-100">Ver todos</button>
+      {hayFiltros && (
+        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-amber-100 bg-amber-50 p-4 text-sm font-bold text-amber-800">
+          {sectorFiltro && <Chip label={`Sector: ${sectorFiltro}`} />}
+          {proveedorFiltro && <Chip label={`Proveedor: ${proveedorFiltro}`} />}
+          {stockFiltro && <Chip label={`Estado: ${stockFiltro}`} />}
+          {ubicacionFiltro && <Chip label={`Ubicación: ${ubicacionFiltro}`} />}
+          {busqueda && <Chip label={`Búsqueda: ${busqueda}`} />}
+          <button onClick={limpiarFiltros} className="ml-auto rounded-lg bg-white px-3 py-2 text-xs font-black text-amber-700 ring-1 ring-amber-100">Ver todos</button>
         </div>
       )}
 
@@ -225,6 +264,7 @@ export default function ArticulosV2() {
                   <p className="font-mono text-xs font-black text-amber-600">{art.codigo}</p>
                   <h3 className="mt-1 line-clamp-2 font-black text-gray-900">{art.nombre}</h3>
                   <p className="mt-1 text-xs font-semibold text-gray-500">{art.categoria} · {art.ubicacion || 'Sin ubicación'}</p>
+                  <p className="mt-1 text-[11px] font-bold text-gray-400">{art.proveedorPrincipal || 'Sin proveedor'}</p>
                 </div>
                 <button onClick={() => abrirEditar(art)} className="rounded-xl bg-gray-100 p-2 text-gray-500 hover:bg-gray-200"><Edit className="h-4 w-4" /></button>
               </div>
@@ -238,30 +278,18 @@ export default function ArticulosV2() {
         })}
       </div>
 
+      {articulosFiltrados.length === 0 && <div className="rounded-3xl border border-gray-100 bg-white p-8 text-center text-sm font-bold text-gray-400">No hay artículos que coincidan con esos filtros.</div>}
+
       {modal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/60 p-4">
           <div className="max-h-[92vh] w-full max-w-3xl overflow-hidden rounded-3xl bg-white shadow-2xl">
             <div className="flex items-center justify-between bg-gray-950 px-6 py-5 text-white">
-              <div>
-                <h3 className="text-xl font-black">{editando ? 'Editar artículo' : 'Nuevo artículo'}</h3>
-                <p className="text-xs font-semibold text-gray-400">El código se genera solo si lo dejas vacío.</p>
-              </div>
+              <div><h3 className="text-xl font-black">{editando ? 'Editar artículo' : 'Nuevo artículo'}</h3><p className="text-xs font-semibold text-gray-400">El código se genera solo si lo dejas vacío.</p></div>
               <button onClick={() => setModal(false)} className="rounded-xl p-2 text-gray-300 hover:bg-white/10 hover:text-white"><X className="h-6 w-6" /></button>
             </div>
-
             <form onSubmit={guardar} className="max-h-[calc(92vh-88px)] space-y-5 overflow-y-auto p-6">
               {error && <div className="flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm font-bold text-red-700"><AlertTriangle className="h-4 w-4" />{error}</div>}
-
-              <div className="rounded-3xl border border-amber-100 bg-amber-50 p-4">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-xs font-black uppercase tracking-wider text-amber-700">Código automático sugerido</p>
-                    <p className="mt-1 font-mono text-xl font-black text-gray-950">{codigoSugerido}</p>
-                  </div>
-                  <button type="button" onClick={aplicarCodigo} className="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-950 px-4 py-3 text-xs font-black text-white"><Sparkles className="h-4 w-4 text-amber-400" /> Usar código</button>
-                </div>
-              </div>
-
+              <div className="rounded-3xl border border-amber-100 bg-amber-50 p-4"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-xs font-black uppercase tracking-wider text-amber-700">Código automático sugerido</p><p className="mt-1 font-mono text-xl font-black text-gray-950">{codigoSugerido}</p></div><button type="button" onClick={aplicarCodigo} className="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-950 px-4 py-3 text-xs font-black text-white"><Sparkles className="h-4 w-4 text-amber-400" /> Usar código</button></div></div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="Código interno" help="Opcional. Si lo dejas vacío, se usa el automático."><input value={form.codigo} onChange={(e) => setField('codigo', e.target.value.toUpperCase())} placeholder={codigoSugerido} className="field font-mono" /></Field>
                 <Field label="Nombre artículo *"><input required value={form.nombre} onChange={(e) => setField('nombre', e.target.value)} placeholder="Ej. Bombilla LED E27" className="field" /></Field>
@@ -272,32 +300,21 @@ export default function ArticulosV2() {
                 <Field label={editando ? 'Stock actual' : 'Cantidad inicial / entrada inicial'} help={editando ? 'Para cambiar stock usa Entradas/Salidas/Inventario.' : 'Si pones cantidad, se crea la entrada inicial automáticamente.'}><input disabled={Boolean(editando)} min="0" type="number" inputMode="numeric" value={form.stockActual} onChange={(e) => setField('stockActual', Number(e.target.value))} className="field text-lg font-black disabled:bg-gray-100 disabled:text-gray-400" /></Field>
                 <Field label="Stock mínimo / alerta"><input min="0" type="number" inputMode="numeric" value={form.stockMinimo} onChange={(e) => setField('stockMinimo', Number(e.target.value))} className="field" /></Field>
               </div>
-
-              <div className="rounded-3xl border border-gray-100 bg-gray-50 p-4">
-                <div className="flex items-center gap-2 text-sm font-black text-gray-800"><MapPin className="h-4 w-4 text-amber-500" /> Ubicación en almacén principal</div>
-                <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_auto]"><input list="ubicaciones-list" value={form.ubicacion || ''} onChange={(e) => setField('ubicacion', e.target.value.toUpperCase())} placeholder="Ej. ELE-A01-B1" className="field font-mono" /><button type="button" onClick={() => setField('ubicacion', ubicacionesSugeridas[0] || '')} className="rounded-xl bg-amber-500 px-4 py-3 text-xs font-black text-gray-950 hover:bg-amber-400">Sugerir</button></div>
-                <datalist id="ubicaciones-list">{[...(ubicaciones || []), ...ubicacionesSugeridas].map((u) => <option key={u} value={u} />)}</datalist>
-                <div className="mt-3 flex flex-wrap gap-2">{ubicacionesSugeridas.slice(0, 6).map((u) => <button key={u} type="button" onClick={() => setField('ubicacion', u)} className="rounded-full bg-white px-3 py-1 text-xs font-black text-gray-600 ring-1 ring-gray-200 hover:bg-amber-50 hover:text-amber-700">{u}</button>)}</div>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Proveedor principal"><select value={form.proveedorPrincipal || ''} onChange={(e) => setField('proveedorPrincipal', e.target.value)} className="field"><option value="">Sin proveedor</option>{proveedores.map((p) => <option key={p.id} value={p.nombre}>{p.nombre}</option>)}</select></Field>
-                <Field label="Foto del artículo"><label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-3 text-xs font-black text-gray-950 hover:bg-amber-400"><Camera className="h-4 w-4" /> Hacer/elegir foto<input type="file" accept="image/*" capture="environment" onChange={handleFoto} className="hidden" /></label></Field>
-              </div>
-
+              <div className="rounded-3xl border border-gray-100 bg-gray-50 p-4"><div className="flex items-center gap-2 text-sm font-black text-gray-800"><MapPin className="h-4 w-4 text-amber-500" /> Ubicación en almacén principal</div><div className="mt-3 grid gap-3 sm:grid-cols-[1fr_auto]"><input list="ubicaciones-list" value={form.ubicacion || ''} onChange={(e) => setField('ubicacion', e.target.value.toUpperCase())} placeholder="Ej. ELE-A01-B1" className="field font-mono" /><button type="button" onClick={() => setField('ubicacion', ubicacionesSugeridas[0] || '')} className="rounded-xl bg-amber-500 px-4 py-3 text-xs font-black text-gray-950 hover:bg-amber-400">Sugerir</button></div><datalist id="ubicaciones-list">{[...(ubicaciones || []), ...ubicacionesSugeridas].map((u) => <option key={u} value={u} />)}</datalist><div className="mt-3 flex flex-wrap gap-2">{ubicacionesSugeridas.slice(0, 6).map((u) => <button key={u} type="button" onClick={() => setField('ubicacion', u)} className="rounded-full bg-white px-3 py-1 text-xs font-black text-gray-600 ring-1 ring-gray-200 hover:bg-amber-50 hover:text-amber-700">{u}</button>)}</div></div>
+              <div className="grid gap-4 sm:grid-cols-2"><Field label="Proveedor principal"><select value={form.proveedorPrincipal || ''} onChange={(e) => setField('proveedorPrincipal', e.target.value)} className="field"><option value="">Sin proveedor</option>{proveedores.map((p) => <option key={p.id} value={p.nombre}>{p.nombre}</option>)}</select></Field><Field label="Foto del artículo"><label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-3 text-xs font-black text-gray-950 hover:bg-amber-400"><Camera className="h-4 w-4" /> Hacer/elegir foto<input type="file" accept="image/*" capture="environment" onChange={handleFoto} className="hidden" /></label></Field></div>
               {(form.foto || form.fotoId) && <img src={form.foto || imageService.placeholder(form.nombre)} alt="Vista previa" className="h-36 w-48 rounded-2xl border border-gray-100 object-cover" />}
               <Field label="Descripción"><textarea rows="3" value={form.descripcion || ''} onChange={(e) => setField('descripcion', e.target.value)} className="field resize-none" /></Field>
-
-              <div className="flex flex-col gap-2 border-t border-gray-100 pt-5 sm:flex-row sm:justify-end">
-                <button type="button" onClick={() => setModal(false)} className="rounded-xl bg-gray-100 px-5 py-3 text-sm font-black text-gray-600 hover:bg-gray-200">Cancelar</button>
-                <button type="submit" className="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-950 px-6 py-3 text-sm font-black text-white hover:bg-gray-800"><Save className="h-4 w-4 text-amber-400" /> Guardar artículo</button>
-              </div>
+              <div className="flex flex-col gap-2 border-t border-gray-100 pt-5 sm:flex-row sm:justify-end"><button type="button" onClick={() => setModal(false)} className="rounded-xl bg-gray-100 px-5 py-3 text-sm font-black text-gray-600 hover:bg-gray-200">Cancelar</button><button type="submit" className="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-950 px-6 py-3 text-sm font-black text-white hover:bg-gray-800"><Save className="h-4 w-4 text-amber-400" /> Guardar artículo</button></div>
             </form>
           </div>
         </div>
       )}
     </div>
   );
+}
+
+function Chip({ label }) {
+  return <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-amber-700 ring-1 ring-amber-100">{label}</span>;
 }
 
 function Field({ label, help, children }) {

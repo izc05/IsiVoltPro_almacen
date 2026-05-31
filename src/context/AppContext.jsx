@@ -303,7 +303,7 @@ export function AppProvider({ children }) {
     try {
       const mov = inventoryService.registrarSalida(articuloId, cantidad, data);
       refrescarDatos();
-      mostrarNotificacion(`Salida registrada: -${cantidad} unidades.`);
+      mostrarNotificacion(`Salida registrada: ${cantidad} unidades retiradas.`);
       return mov;
     } catch (e) {
       mostrarNotificacion(e.message, 'error');

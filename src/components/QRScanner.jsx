@@ -155,7 +155,7 @@ export default function QRScanner({ onScanResult = null, inlineMode = false }) {
     if (!articulo) return setError('Escanea o busca primero un artículo existente.');
     try {
       if (accion === 'entrada') { registrarEntrada(articulo.id, cantidad, { proveedor, documento, observaciones, almacenId: ALMACEN_ID }); setOk(`Entrada registrada: +${cantidad} ${articulo.unidad} · ${articulo.nombre}`); }
-      if (accion === 'salida') { registrarSalida(articulo.id, cantidad, { tecnico, documento, observaciones, almacenId: ALMACEN_ID }); setOk(`Salida registrada: -${cantidad} ${articulo.unidad} · ${articulo.nombre}`); }
+      if (accion === 'salida') { registrarSalida(articulo.id, cantidad, { tecnico, documento, observaciones, almacenId: ALMACEN_ID }); setOk(`Salida registrada: ${cantidad} ${articulo.unidad} retiradas · ${articulo.nombre}`); }
       if (accion === 'recuento') { const mov = registrarInventarioAlmacen(articulo.id, stockFisico, observaciones || 'Recuento rápido por QR/código de barras', ALMACEN_ID); setOk(mov ? `Inventario ajustado: ${articulo.nombre}` : 'Inventario correcto. Sin descuadre.'); }
       if (continuo) setTimeout(listoSiguiente, 800);
     } catch (err) { setError(err.message || 'No se pudo guardar la operación.'); }

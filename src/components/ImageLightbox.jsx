@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { RotateCcw, X, ZoomIn, ZoomOut } from 'lucide-react';
 
 const MIN_ZOOM = 1;
@@ -20,10 +20,10 @@ export default function ImageLightbox() {
   const [image, setImage] = useState(null);
   const [zoom, setZoom] = useState(MIN_ZOOM);
 
-  const close = () => {
+  const close = useCallback(() => {
     setImage(null);
     setZoom(MIN_ZOOM);
-  };
+  }, []);
 
   useEffect(() => {
     const handleImageClick = (event) => {
@@ -59,7 +59,7 @@ export default function ImageLightbox() {
       document.body.style.overflow = previousOverflow;
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [image]);
+  }, [image, close]);
 
   if (!image) return null;
 
@@ -69,9 +69,6 @@ export default function ImageLightbox() {
       role="dialog"
       aria-modal="true"
       aria-label={`Imagen ampliada: ${image.alt}`}
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) close();
-      }}
     >
       <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3 sm:px-6">
         <div className="min-w-0">
@@ -89,7 +86,12 @@ export default function ImageLightbox() {
         </button>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-auto p-4 sm:p-6">
+      <div
+        className="min-h-0 flex-1 overflow-auto p-4 sm:p-6"
+        onMouseDown={(event) => {
+          if (event.target === event.currentTarget) close();
+        }}
+      >
         <div className="flex min-h-full min-w-full items-center justify-center">
           <img
             src={image.src}
@@ -123,6 +125,7 @@ export default function ImageLightbox() {
           type="button"
           onClick={() => setZoom(MIN_ZOOM)}
           className="inline-flex min-w-24 items-center justify-center gap-2 rounded-xl bg-white/10 px-4 py-3 text-xs font-black hover:bg-white/20"
+          aria-label="Restablecer tamaño"
         >
           <RotateCcw className="h-4 w-4" />
           {Math.round(zoom * 100)}%

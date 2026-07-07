@@ -1,6 +1,7 @@
 import { Suspense, lazy } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import Layout from './components/Layout';
+import ImageLightbox from './components/ImageLightbox';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import Articulos from './components/ArticulosV2';
@@ -59,7 +60,12 @@ function AppContent() {
     }
   };
 
-  return <Layout>{renderContent()}</Layout>;
+  return (
+    <>
+      <Layout>{renderContent()}</Layout>
+      <ImageLightbox />
+    </>
+  );
 }
 
 function App() {
